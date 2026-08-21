@@ -14,9 +14,45 @@ import TrackOrder from './components/order/TrackOrder';
 import InventoryManager from './components/admin/InventoryManager';
 import ShipmentManager from './components/admin/ShipmentManager';
 
+const FALLBACK_PRODUCTS = [
+  {
+    id: "sku-lux-01",
+    brand: "Luxura Sciences",
+    brandColor: "#00A859",
+    warehouseCity: "Mumbai Hub",
+    name: "Vitamin C Face Serum (30ml)",
+    price: 499,
+    mrp: 899,
+    stock: 5,
+    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80"
+  },
+  {
+    id: "sku-sn-02",
+    brand: "Shiv-Naresh",
+    brandColor: "#0038A8",
+    warehouseCity: "Delhi Hub",
+    name: "Performance Dry-Fit Track Pant",
+    price: 1199,
+    mrp: 1899,
+    stock: 3,
+    image: "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=600&q=80"
+  },
+  {
+    id: "sku-swarg-03",
+    brand: "Swarg Homes",
+    brandColor: "#FF6B00",
+    warehouseCity: "Jaipur Hub",
+    name: "Ceramic Handcrafted Dinner Set",
+    price: 2499,
+    mrp: 3999,
+    stock: 2,
+    image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=600&q=80"
+  }
+];
+
 export default function App() {
   const [viewMode, setViewMode] = useState('store');
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
   const [adminOrders, setAdminOrders] = useState([]);
   const [pincode, setPincode] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -33,14 +69,18 @@ export default function App() {
   const fetchProducts = async () => {
     try {
       const data = await api.getProducts();
-      setProducts(data);
-    } catch (err) {}
+      if (Array.isArray(data) && data.length > 0) {
+        setProducts(data);
+      }
+    } catch (err) {
+      setProducts(FALLBACK_PRODUCTS);
+    }
   };
 
   const fetchAdminOrders = async () => {
     try {
       const data = await api.getAdminOrders();
-      setAdminOrders(data);
+      if (Array.isArray(data)) setAdminOrders(data);
     } catch (err) {}
   };
 
@@ -101,7 +141,9 @@ export default function App() {
           product={selectedProduct}
           isOpen={Boolean(selectedProduct)}
           onClose={() => setSelectedProduct(null)}
-          onBuyNow={() => setSelectedProduct(null)}
+          onBuyNow={() => {
+            setSelectedProduct(null);
+          }}
         />
 
         <LiveSalesTicker />

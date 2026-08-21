@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ products, onSelectProduct, searchQuery }) {
+export default function ProductGrid({ products = [], onSelectProduct, searchQuery = '' }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const categories = ['ALL', ...new Set(products.map((p) => p.category))];
+  
+  const categories = ['ALL', ...new Set(products.map((p) => p.category || 'general'))];
 
   const filtered = products.filter((p) => {
+    const q = (searchQuery || '').trim().toLowerCase();
     const matchesCat = selectedCategory === 'ALL' || p.category === selectedCategory;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.brand.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = !q || 
+      (p.name && p.name.toLowerCase().includes(q)) || 
+      (p.brand && p.brand.toLowerCase().includes(q)) ||
+      (p.category && p.category.toLowerCase().includes(q));
     return matchesCat && matchesSearch;
   });
 
@@ -33,7 +37,7 @@ export default function ProductGrid({ products, onSelectProduct, searchQuery }) 
 
       {filtered.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-400 text-xs">
-          No items found matching your criteria.
+          No items found matching "{searchQuery}". <button onClick={() => window.location.reload()} className="text-blue-600 font-bold underline ml-1">Reset Filters</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">

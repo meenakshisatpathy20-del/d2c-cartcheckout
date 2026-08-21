@@ -1,75 +1,70 @@
 import React from 'react';
-import { Star, Eye, ShoppingBag, MapPin, Zap } from 'lucide-react';
+import { Star, ShoppingBag, Truck } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 export default function ProductCard({ product, onSelectProduct }) {
   const { addToCart } = useCart();
 
   return (
-    <div className="group bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-3xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-blue-950/50 relative overflow-hidden">
-      <div className="space-y-4">
+    <div className="bg-white border border-slate-200 hover:border-slate-300 rounded-3xl p-4 flex flex-col justify-between shadow-2xs hover:shadow-md transition group">
+      <div>
         <div
           onClick={() => onSelectProduct(product)}
-          className="h-52 bg-slate-950 rounded-2xl overflow-hidden relative cursor-pointer border border-slate-800/80"
+          className="h-48 bg-slate-50 rounded-2xl overflow-hidden cursor-pointer border border-slate-100 p-3 flex items-center justify-center relative"
         >
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
           />
-          <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-            <span className="bg-white/90 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-xl flex items-center space-x-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-              <Eye className="w-4 h-4 text-blue-600" />
-              <span>Inspect Details</span>
-            </span>
-          </div>
-
           <span
-            className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider text-white px-3 py-1 rounded-xl shadow-lg backdrop-blur-md"
+            className="absolute top-2.5 left-2.5 text-[10px] font-black uppercase tracking-wider text-white px-2 py-0.5 rounded shadow-xs"
             style={{ backgroundColor: product.brandColor }}
           >
             {product.brand}
           </span>
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[11px]">
-            <div className="flex items-center space-x-1 bg-amber-400/10 text-amber-400 border border-amber-400/20 px-2 py-0.5 rounded-md font-black">
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-1 bg-amber-50 text-amber-900 px-1.5 py-0.5 rounded font-bold border border-amber-200">
               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              <span>4.9</span>
+              <span>{product.rating}</span>
+              <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
             </div>
-            <span className="text-slate-400 flex items-center">
-              <MapPin className="w-3 h-3 mr-1 text-slate-500" /> {product.warehouseCity}
-            </span>
+            <span className="text-emerald-700 font-bold text-[11px]">In Stock</span>
           </div>
 
           <h3
             onClick={() => onSelectProduct(product)}
-            className="font-bold text-sm text-slate-100 line-clamp-1 hover:text-blue-400 cursor-pointer transition-colors"
+            className="font-bold text-sm text-slate-900 line-clamp-1 hover:text-blue-600 cursor-pointer mt-1"
           >
             {product.name}
           </h3>
+
+          <p className="text-[11px] text-slate-500 flex items-center">
+            <Truck className="w-3 h-3 mr-1 text-slate-400" /> Delivery by {product.estimatedDays ? `${product.estimatedDays} business days` : 'Tuesday'}
+          </p>
         </div>
       </div>
 
-      <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
         <div>
-          <div className="flex items-baseline space-x-2">
-            <span className="font-black text-lg text-white">₹{product.price}</span>
-            <span className="text-xs text-slate-500 line-through">₹{product.mrp}</span>
+          <div className="flex items-baseline space-x-1.5">
+            <span className="font-black text-base text-slate-900">₹{product.price}</span>
+            <span className="text-xs text-slate-400 line-through">₹{product.mrp}</span>
           </div>
-          <p className={`text-[11px] font-bold mt-0.5 ${product.stock <= 2 ? 'text-orange-400' : 'text-emerald-400'}`}>
-            {product.stock > 0 ? `${product.stock} units in hub` : 'Sold out'}
-          </p>
+          <span className="text-[10px] text-emerald-600 font-bold">
+            {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
+          </span>
         </div>
 
         <button
           onClick={() => addToCart(product)}
-          disabled={product.stock === 0}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 text-white text-xs font-black px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center space-x-1.5"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs active:scale-95 flex items-center space-x-1"
         >
           <ShoppingBag className="w-3.5 h-3.5" />
-          <span>{product.stock > 0 ? 'Add +' : 'Sold'}</span>
+          <span>Add</span>
         </button>
       </div>
     </div>

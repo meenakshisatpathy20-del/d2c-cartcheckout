@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const Razorpay = require('razorpay');
-const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
@@ -15,246 +14,216 @@ const razorpay = new Razorpay({
 
 let inventory = [
   {
-    id: "sku-lux-01",
-    brand: "Luxura Sciences",
+    id: "sku-1",
+    brand: "Essence",
     brandColor: "#00A859",
-    warehouseCity: "Mumbai Hub",
-    name: "Vitamin C Face Serum (30ml)",
-    price: 499,
-    mrp: 899,
-    stock: 5,
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80"
+    category: "beauty",
+    warehouseCity: "Mumbai Bhiwandi Hub",
+    name: "Essence Mascara Lash Princess",
+    price: 829,
+    mrp: 1299,
+    stock: 99,
+    rating: 4.9,
+    reviewsCount: 1420,
+    estimatedDays: 2,
+    image: "https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png",
+    description: "Cruelty-free long-lasting curl and volume mascara with conical fiber wand."
   },
   {
-    id: "sku-sn-02",
-    brand: "Shiv-Naresh",
+    id: "sku-2",
+    brand: "Glamour",
     brandColor: "#0038A8",
-    warehouseCity: "Delhi Hub",
-    name: "Performance Dry-Fit Track Pant",
-    price: 1199,
-    mrp: 1899,
-    stock: 3,
-    image: "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=600&q=80"
+    category: "beauty",
+    warehouseCity: "Delhi NCR Hub",
+    name: "Eyeshadow Palette with Mirror",
+    price: 1659,
+    mrp: 2499,
+    stock: 34,
+    rating: 4.8,
+    reviewsCount: 890,
+    estimatedDays: 3,
+    image: "https://cdn.dummyjson.com/products/images/beauty/Eyeshadow%20Palette%20with%20Mirror/thumbnail.png",
+    description: "Highly pigmented blendable velvety shades for day-to-night eye makeup."
   },
   {
-    id: "sku-swarg-03",
-    brand: "Swarg Homes",
+    id: "sku-3",
+    brand: "Velvet Touch",
     brandColor: "#FF6B00",
-    warehouseCity: "Jaipur Hub",
-    name: "Ceramic Handcrafted Dinner Set",
-    price: 2499,
-    mrp: 3999,
-    stock: 2,
-    image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=600&q=80"
+    category: "beauty",
+    warehouseCity: "Bengaluru Whitefield Hub",
+    name: "Powder Canister Compact",
+    price: 1244,
+    mrp: 1899,
+    stock: 89,
+    rating: 4.7,
+    reviewsCount: 650,
+    estimatedDays: 2,
+    image: "https://cdn.dummyjson.com/products/images/beauty/Powder%20Canister/thumbnail.png",
+    description: "Finely milled setting powder to lock in makeup with a shine-free matte finish."
+  },
+  {
+    id: "sku-4",
+    brand: "Chic Fragrance",
+    brandColor: "#8B5CF6",
+    category: "fragrances",
+    warehouseCity: "Jaipur Depot Hub",
+    name: "Calvin Klein CK One EDT (100ml)",
+    price: 3499,
+    mrp: 5200,
+    stock: 45,
+    rating: 4.9,
+    reviewsCount: 2100,
+    estimatedDays: 3,
+    image: "https://cdn.dummyjson.com/products/images/fragrances/Calvin%20Klein%20CK%20One/thumbnail.png",
+    description: "Iconic clean citrus and green tea unisex fragrance for everyday luxury."
   }
 ];
 
-let activeReservations = {};
-let completedOrders = [];
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [resId, resData] of Object.entries(activeReservations)) {
-    if (now > resData.expiresAt) {
-      resData.items.forEach(item => {
-        const prod = inventory.find(p => p.id === item.skuId);
-        if (prod) prod.stock += item.qty;
-      });
-      delete activeReservations[resId];
-    }
+let completedOrders = [
+  {
+    orderId: "D2C-849201",
+    invoiceNumber: "INV-2026-88190",
+    placedAt: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
+    status: "DELIVERED",
+    paymentStatus: "PAID",
+    paymentMethod: "UPI / Razorpay Verified",
+    returnRequested: false,
+    customer: {
+      name: "Meenakshi",
+      phone: "+91 98765 43210",
+      city: "Ranchi",
+      pincode: "835215"
+    },
+    fulfillments: [
+      {
+        shipmentId: "SR-8201",
+        brand: "Essence",
+        pickupWarehouse: "Mumbai Bhiwandi Hub",
+        awb: "AWB9481023IN",
+        courier: "Delhivery Surface (Shiprocket)",
+        status: "DELIVERED",
+        item: "Essence Mascara Lash Princess",
+        qty: 1,
+        image: "https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"
+      },
+      {
+        shipmentId: "SR-8202",
+        brand: "Glamour",
+        pickupWarehouse: "Delhi NCR Hub",
+        awb: "AWB9481024IN",
+        courier: "Blue Dart Air (Shiprocket)",
+        status: "DELIVERED",
+        item: "Eyeshadow Palette with Mirror",
+        qty: 1,
+        image: "https://cdn.dummyjson.com/products/images/beauty/Eyeshadow%20Palette%20with%20Mirror/thumbnail.png"
+      }
+    ],
+    summary: { itemSubtotal: 2488, shippingFee: 50, discountAmount: 100, totalPaid: 2438 }
   }
-}, 10000);
-
-const COUPONS = {
-  "D2C100": { minOrder: 999, discount: 100, type: "FLAT" },
-  "FREESHIP": { minOrder: 500, discount: 50, type: "SHIPPING" },
-  "FESTIVE20": { minOrder: 1999, discount: 0.20, type: "PERCENT" }
-};
+];
 
 app.get('/api/products', (req, res) => {
   res.json(inventory);
 });
 
-app.post('/api/shiprocket/check-pincode', (req, res) => {
+app.post('/api/delivery/check', (req, res) => {
   const { pincode } = req.body;
-  if (!pincode || pincode.length !== 6 || !/^\d+$/.test(pincode)) {
+  if (!pincode || pincode.length !== 6 || isNaN(pincode)) {
     return res.status(400).json({ error: "Enter a valid 6-digit pin code." });
   }
-
-  const isDeliverable = !pincode.startsWith("000");
-  const estimatedDays = pincode.startsWith("83") ? 2 : 4;
-
   res.json({
-    deliverable: isDeliverable,
-    estimatedDays,
-    courierPartner: pincode.startsWith("83") ? "Delhivery Surface (Shiprocket)" : "Blue Dart Air (Shiprocket)",
-    codAvailable: true,
-    shippingFee: 50
+    deliverable: true,
+    estimatedDays: pincode.startsWith('83') ? 2 : 3,
+    courierPartner: pincode.startsWith('83') ? "Delhivery Surface" : "Blue Dart Air"
   });
 });
 
 app.post('/api/coupons/validate', (req, res) => {
   const { code, cartTotal } = req.body;
-  const coupon = COUPONS[code?.toUpperCase()];
-
-  if (!coupon) return res.status(404).json({ message: "Invalid promo code." });
-  if (cartTotal < coupon.minOrder) {
-    return res.status(400).json({ message: `Minimum order value for ${code} is ₹${coupon.minOrder}` });
-  }
-
-  let discountAmount = 0;
-  if (coupon.type === "FLAT" || coupon.type === "SHIPPING") {
-    discountAmount = coupon.discount;
-  } else if (coupon.type === "PERCENT") {
-    discountAmount = Math.round(cartTotal * coupon.discount);
-  }
-
-  res.json({ valid: true, code: code.toUpperCase(), discountAmount });
+  const c = code?.toUpperCase();
+  if (c === 'D2C100') return res.json({ discountAmount: 100 });
+  if (c === 'FREESHIP') return res.json({ discountAmount: 50 });
+  if (c === 'FESTIVE20') return res.json({ discountAmount: Math.round(cartTotal * 0.20) });
+  res.status(404).json({ message: "Invalid promo code" });
 });
 
-app.post('/api/checkout/initiate-payment', async (req, res) => {
+app.post('/api/checkout/order', async (req, res) => {
   const { items, customer, discountAmount = 0, shippingFee = 50 } = req.body;
 
-  for (let item of items) {
-    const product = inventory.find(p => p.id === item.skuId);
-    if (!product || product.stock < item.qty) {
-      return res.status(400).json({ error: `Insufficient stock for ${product ? product.name : 'item'}` });
-    }
-  }
-
-  items.forEach(item => {
-    const product = inventory.find(p => p.id === item.skuId);
-    product.stock -= item.qty;
-  });
-
-  const reservationId = uuidv4();
-  const subtotal = items.reduce((acc, item) => {
-    const prod = inventory.find(p => p.id === item.skuId);
-    return acc + (prod.price * item.qty);
-  }, 0);
-
-  const finalPayable = Math.max(1, subtotal + shippingFee - discountAmount);
-
-  let rzpOrderId = `order_mock_${Date.now()}`;
-  try {
-    const rzpOrder = await razorpay.orders.create({
-      amount: finalPayable * 100,
-      currency: "INR",
-      receipt: `rcpt_${reservationId.substring(0, 8)}`
-    });
-    rzpOrderId = rzpOrder.id;
-  } catch (e) {}
-
-  activeReservations[reservationId] = {
-    items,
-    customer,
-    discountAmount,
-    shippingFee,
-    payableAmount: finalPayable,
-    expiresAt: Date.now() + 10 * 60 * 1000
-  };
-
-  res.json({
-    reservationId,
-    razorpayOrderId: rzpOrderId,
-    amount: finalPayable * 100,
-    currency: "INR",
-    keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_mockKey123',
-    expiresInSeconds: 600
-  });
-});
-
-app.post('/api/checkout/verify-payment', (req, res) => {
-  const { reservationId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-  const reservation = activeReservations[reservationId];
-  if (!reservation) {
-    return res.status(400).json({ error: "Checkout session expired. Held stock was returned." });
-  }
-
-  if (process.env.RAZORPAY_KEY_SECRET && razorpay_signature) {
-    const expected = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
-
-    if (expected !== razorpay_signature) {
-      return res.status(400).json({ error: "Payment signature mismatch." });
-    }
-  }
-
   const orderId = `D2C-${Math.floor(100000 + Math.random() * 900000)}`;
+  const invoiceNumber = `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`;
 
-  const fulfillments = reservation.items.map((item, idx) => {
-    const product = inventory.find(p => p.id === item.skuId);
+  const fulfillments = items.map((item, idx) => {
+    const prod = inventory.find(p => p.id === item.skuId) || inventory[0];
     return {
       shipmentId: `SR-${Math.floor(10000 + Math.random() * 90000)}`,
-      brand: product.brand,
-      pickupWarehouse: product.warehouseCity,
+      brand: prod.brand,
+      pickupWarehouse: prod.warehouseCity,
       awb: `AWB${Math.floor(10000000 + Math.random() * 90000000)}IN`,
       courier: idx % 2 === 0 ? "Delhivery Surface" : "Blue Dart Air",
-      status: "READY_TO_SHIP",
-      item: product.name,
-      qty: item.qty
+      status: "SHIPPED",
+      item: prod.name,
+      qty: item.qty,
+      image: prod.image
     };
   });
 
+  const subtotal = items.reduce((acc, item) => {
+    const prod = inventory.find(p => p.id === item.skuId) || inventory[0];
+    return acc + prod.price * item.qty;
+  }, 0);
+
   const finalOrder = {
     orderId,
+    invoiceNumber,
+    placedAt: new Date().toISOString(),
     status: "CONFIRMED",
     paymentStatus: "PAID",
-    paymentId: razorpay_payment_id || `pay_mock_${Date.now()}`,
-    customer: reservation.customer,
+    paymentMethod: "UPI / Razorpay",
+    returnRequested: false,
+    customer,
     fulfillments,
     summary: {
-      totalPaid: reservation.payableAmount,
-      itemsCount: reservation.items.length,
-      discountAmount: reservation.discountAmount,
-      shippingFee: reservation.shippingFee
-    },
-    placedAt: new Date().toISOString()
+      itemSubtotal: subtotal,
+      shippingFee,
+      discountAmount,
+      totalPaid: Math.max(1, subtotal + shippingFee - discountAmount)
+    }
   };
 
   completedOrders.unshift(finalOrder);
-  delete activeReservations[reservationId];
-
   res.json(finalOrder);
 });
 
-app.get('/api/orders/track/:query', (req, res) => {
-  const q = req.params.query.trim().toUpperCase();
-  const matched = completedOrders.find(o => 
-    o.orderId.toUpperCase() === q || 
-    o.fulfillments.some(f => f.awb.toUpperCase() === q)
-  );
-
-  if (!matched) return res.status(404).json({ error: "No order or AWB found." });
-  res.json(matched);
+app.get('/api/orders', (req, res) => {
+  res.json(completedOrders);
 });
 
-app.get('/api/admin/orders', (req, res) => {
-  res.json(completedOrders);
+app.post('/api/orders/return', (req, res) => {
+  const { orderId, reason, refundMethod } = req.body;
+  const order = completedOrders.find(o => o.orderId === orderId);
+  if (order) {
+    order.returnRequested = true;
+    order.returnDetails = { reason, refundMethod, requestedAt: new Date().toISOString() };
+  }
+  res.json({ success: true });
 });
 
 app.post('/api/admin/inventory/update', (req, res) => {
   const { skuId, newStock } = req.body;
-  const product = inventory.find(p => p.id === skuId);
-  if (!product) return res.status(404).json({ error: "Product not found." });
-
-  product.stock = Math.max(0, parseInt(newStock, 10));
-  res.json({ message: "Stock updated successfully.", product });
+  const prod = inventory.find(p => p.id === skuId);
+  if (prod) prod.stock = Math.max(0, parseInt(newStock, 10));
+  res.json({ success: true, prod });
 });
 
-app.post('/api/admin/shipment/update-status', (req, res) => {
+app.post('/api/admin/shipment/status', (req, res) => {
   const { orderId, shipmentId, newStatus } = req.body;
   const order = completedOrders.find(o => o.orderId === orderId);
-  if (!order) return res.status(404).json({ error: "Order not found." });
-
-  const fulfillment = order.fulfillments.find(f => f.shipmentId === shipmentId);
-  if (!fulfillment) return res.status(404).json({ error: "Shipment not found." });
-
-  fulfillment.status = newStatus;
-  res.json({ message: "Status updated.", fulfillment });
+  if (order) {
+    const f = order.fulfillments.find(pkg => pkg.shipmentId === shipmentId);
+    if (f) f.status = newStatus;
+  }
+  res.json({ success: true });
 });
 
 const PORT = 5000;

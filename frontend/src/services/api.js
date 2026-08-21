@@ -13,7 +13,7 @@ async function request(endpoint, options = {}) {
 
 export const api = {
   getProducts: () => request('/products'),
-  checkPincode: (pincode) => request('/shiprocket/check-pincode', {
+  checkDelivery: (pincode) => request('/delivery/check', {
     method: 'POST',
     body: JSON.stringify({ pincode })
   }),
@@ -21,21 +21,22 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ code, cartTotal })
   }),
-  initiatePayment: (payload) => request('/checkout/initiate-payment', {
+  createOrder: (payload) => request('/checkout/order', {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
-  verifyPayment: (payload) => request('/checkout/verify-payment', {
+  getCustomerOrders: () => request('/orders'),
+  trackOrder: (orderId) => request(`/orders/track/${encodeURIComponent(orderId)}`),
+  requestReturn: (payload) => request('/orders/return', {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
-  trackOrder: (query) => request(`/orders/track/${encodeURIComponent(query)}`),
-  getAdminOrders: () => request('/admin/orders'),
+  getAdminMetrics: () => request('/admin/metrics'),
   updateStock: (skuId, newStock) => request('/admin/inventory/update', {
     method: 'POST',
     body: JSON.stringify({ skuId, newStock })
   }),
-  updateShipmentStatus: (orderId, shipmentId, newStatus) => request('/admin/shipment/update-status', {
+  updateShipmentStatus: (orderId, shipmentId, newStatus) => request('/admin/shipment/status', {
     method: 'POST',
     body: JSON.stringify({ orderId, shipmentId, newStatus })
   })

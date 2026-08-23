@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Calendar, CheckCircle2, Clock, RotateCcw, AlertCircle, ChevronDown, Check } from 'lucide-react';
+import { Package, Calendar, CheckCircle2, RotateCcw, Truck, Check } from 'lucide-react';
 import { api } from '../../services/api';
 
 export default function CustomerOrdersView() {
@@ -28,7 +28,7 @@ export default function CustomerOrdersView() {
         reason: returnReason,
         refundMethod
       });
-      setReturnSuccess(`Return pickup scheduled for order ${returnModalOrder.orderId}`);
+      setReturnSuccess(`Return pickup scheduled for order ${returnModalOrder.orderId}. Courier pickup scheduled within 24 hours.`);
       setReturnModalOrder(null);
       loadOrders();
       setTimeout(() => setReturnSuccess(''), 4000);
@@ -43,7 +43,7 @@ export default function CustomerOrdersView() {
             <Package className="w-6 h-6 text-blue-600" />
             <span>My Orders & Returns</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">Track package arrivals and manage item returns</p>
+          <p className="text-xs text-slate-500 mt-0.5">Track package arrivals and manage door pickups</p>
         </div>
       </div>
 
@@ -62,8 +62,6 @@ export default function CustomerOrdersView() {
         <div className="space-y-6">
           {orders.map((order) => (
             <div key={order.orderId} className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-              
-              {/* Top Order Summary */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 gap-2">
                 <div>
                   <div className="flex items-center space-x-2">
@@ -80,7 +78,7 @@ export default function CustomerOrdersView() {
                 {order.status === 'DELIVERED' && !order.returnRequested && (
                   <button
                     onClick={() => setReturnModalOrder(order)}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3.5 py-1.5 rounded-xl transition flex items-center space-x-1"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3.5 py-1.5 rounded-xl transition flex items-center space-x-1 cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Return / Exchange</span>
@@ -94,7 +92,6 @@ export default function CustomerOrdersView() {
                 )}
               </div>
 
-              {/* Customer Package Language */}
               <div className="space-y-4">
                 <p className="text-xs font-bold text-slate-700">
                   {order.fulfillments.length > 1
@@ -118,15 +115,14 @@ export default function CustomerOrdersView() {
                         <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">
                           {pkg.status.replace(/_/g, ' ')}
                         </span>
-                        <p className="text-[10px] text-slate-400 mt-1">Courier: {pkg.courier.split(' ')[0]}</p>
+                        <p className="text-[10px] text-slate-400 mt-1">Carrier: {pkg.carrier || pkg.courier}</p>
                       </div>
                     </div>
 
-                    {/* Customer-Friendly 4-Step Milestone */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-2 border-t border-slate-200">
                       {[
                         { title: 'Order Confirmed', completed: true },
-                        { title: 'Packed & Shipped', completed: ['SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(pkg.status) },
+                        { title: 'Packed & Dispatched', completed: ['SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(pkg.status) },
                         { title: 'Out for Delivery', completed: ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(pkg.status) },
                         { title: 'Delivered', completed: pkg.status === 'DELIVERED' }
                       ].map((step, sIdx) => (
@@ -145,13 +141,11 @@ export default function CustomerOrdersView() {
                   </div>
                 ))}
               </div>
-
             </div>
           ))}
         </div>
       )}
 
-      {/* Return & Refund Modal (Blueprint Rule 12 & 20) */}
       {returnModalOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white border border-slate-200 w-full max-w-lg rounded-3xl p-6 relative shadow-2xl space-y-4">
@@ -178,7 +172,7 @@ export default function CustomerOrdersView() {
                 <label className="font-bold text-slate-700 block mb-1">Refund Method</label>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
                   <p className="font-bold text-slate-900">Original Payment Method (UPI / Card)</p>
-                  <p className="text-[11px] text-slate-500">Refund credited within 24 hours of warehouse QC approval.</p>
+                  <p className="text-[11px] text-slate-500">Refund credited within 24 hours of warehouse QC check.</p>
                 </div>
               </div>
 
@@ -186,13 +180,13 @@ export default function CustomerOrdersView() {
                 <button
                   type="button"
                   onClick={() => setReturnModalOrder(null)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 rounded-xl transition"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 rounded-xl transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl transition shadow-sm"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl transition shadow-sm cursor-pointer"
                 >
                   Submit Return Request
                 </button>

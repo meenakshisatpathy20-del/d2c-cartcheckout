@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, CreditCard, User, MapPin, Phone, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { X, CreditCard, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useCheckout } from '../../context/CheckoutContext';
 
@@ -7,7 +7,7 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }) {
   const { cart, subtotal, shippingFee, discountAmount, grandTotal, appliedCoupon } = useCart();
   const { loading, startRazorpayCheckout, checkoutError } = useCheckout();
 
-  const [paymentOption, setPaymentOption] = useState('RAZORPAY'); // 'RAZORPAY' | 'COD'
+  const [paymentOption, setPaymentOption] = useState('RAZORPAY');
 
   const [customer, setCustomer] = useState({
     name: 'Meenakshi',
@@ -53,7 +53,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Shipping Address Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="font-bold text-slate-700 block mb-1">Full Name</label>
@@ -112,7 +111,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Payment Methods (UPI / Cards / NetBanking) */}
           <div className="space-y-2 pt-2">
             <label className="font-bold text-slate-700 block">Select Payment Method</label>
             <div className="grid grid-cols-2 gap-3">
@@ -144,7 +142,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Price Preview */}
           <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-1.5">
             <div className="flex justify-between text-slate-500">
               <span>Items Total ({cart.length} SKUs):</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Check, Sparkles, Truck, ShieldCheck, RotateCcw, Clock } from 'lucide-react';
+import { Copy, Check, Truck, ShieldCheck, RotateCcw, Clock } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 export default function PromotionalBanners() {
@@ -10,23 +10,21 @@ export default function PromotionalBanners() {
   const heroSlides = [
     {
       title: "Direct-to-Consumer Festival Deals",
-      subtitle: "Shop genuine beauty, smartphones & fragrances directly from brand-certified depots.",
+      subtitle: "Shop genuine beauty, smart electronics & bridal jewellery from certified depots.",
       badge: "MEGA FESTIVAL",
       code: "FESTIVE20",
       cta: "20% OFF (Min ₹1999)",
       discountAmount: Math.round(subtotal * 0.2) || 200,
-      gradient: "from-blue-700 via-indigo-700 to-blue-900",
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"
+      gradient: "from-blue-700 via-indigo-700 to-blue-900"
     },
     {
       title: "Zero-Freight Express SLA",
-      subtitle: "Guaranteed 24-48hr Air Delivery across 29,000+ serviceable Indian pin codes.",
+      subtitle: "Guaranteed 24-48hr Air Delivery across 29,000+ Indian pincodes via Amazon Shipping.",
       badge: "FREE DELIVERY",
       code: "FREESHIP",
       cta: "Free Shipping (Min ₹499)",
       discountAmount: 50,
-      gradient: "from-orange-500 via-amber-500 to-orange-600",
-      image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80"
+      gradient: "from-orange-500 via-amber-500 to-orange-600"
     },
     {
       title: "First-Time Shopper Voucher",
@@ -35,8 +33,7 @@ export default function PromotionalBanners() {
       code: "D2C100",
       cta: "Flat ₹100 Off (Min ₹999)",
       discountAmount: 100,
-      gradient: "from-emerald-600 via-teal-600 to-emerald-700",
-      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80"
+      gradient: "from-emerald-600 via-teal-600 to-emerald-700"
     }
   ];
 
@@ -58,7 +55,6 @@ export default function PromotionalBanners() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Full-Width Carousel Hero Banner */}
       <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${slide.gradient} p-8 text-white shadow-md transition-all duration-700 min-h-[220px] flex flex-col justify-between`}>
         <div className="relative z-10 max-w-xl space-y-2">
           <span className="bg-white/20 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
@@ -83,7 +79,6 @@ export default function PromotionalBanners() {
           </button>
         </div>
 
-        {/* Carousel Indicators */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10">
           {heroSlides.map((_, idx) => (
             <button
@@ -95,15 +90,14 @@ export default function PromotionalBanners() {
         </div>
       </div>
 
-      {/* 2. Trust Bar (Myntra / Flipkart Standard) */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs shadow-2xs">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
             <Truck className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-bold text-slate-900">Express Delivery</p>
-            <p className="text-slate-500 text-[11px]">2-4 Days Pan-India</p>
+            <p className="font-bold text-slate-900">Amazon Shipping</p>
+            <p className="text-slate-500 text-[11px]">2-4 Days SLA Pan-India</p>
           </div>
         </div>
 
@@ -113,7 +107,7 @@ export default function PromotionalBanners() {
           </div>
           <div>
             <p className="font-bold text-slate-900">100% Genuine</p>
-            <p className="text-slate-500 text-[11px]">Direct Brand Certification</p>
+            <p className="text-slate-500 text-[11px]">Direct Brand Guarantee</p>
           </div>
         </div>
 
@@ -123,7 +117,7 @@ export default function PromotionalBanners() {
           </div>
           <div>
             <p className="font-bold text-slate-900">Easy Returns</p>
-            <p className="text-slate-500 text-[11px]">7-Day Door Pickup</p>
+            <p className="text-slate-500 text-[11px]">7-Day Doorstep Pickup</p>
           </div>
         </div>
 
@@ -132,8 +126,8 @@ export default function PromotionalBanners() {
             <Clock className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-bold text-slate-900">Auto-Saved Cart</p>
-            <p className="text-slate-500 text-[11px]">Seamless Resume Anytime</p>
+            <p className="font-bold text-slate-900">Auto-Saved Basket</p>
+            <p className="text-slate-500 text-[11px]">Resume Anytime</p>
           </div>
         </div>
       </div>

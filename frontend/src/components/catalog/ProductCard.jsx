@@ -43,7 +43,7 @@ export default function ProductCard({ product, onSelectProduct }) {
           </h3>
 
           <p className="text-[11px] text-slate-500 flex items-center">
-            <Truck className="w-3 h-3 mr-1 text-slate-400" /> Delivery by {product.estimatedDays ? `${product.estimatedDays} business days` : 'Tuesday'}
+            <Truck className="w-3 h-3 mr-1 text-slate-400" /> Delivery in {product.estimatedDays || 2} business days
           </p>
         </div>
       </div>
@@ -61,7 +61,7 @@ export default function ProductCard({ product, onSelectProduct }) {
 
         <button
           onClick={() => addToCart(product)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs active:scale-95 flex items-center space-x-1"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs active:scale-95 flex items-center space-x-1 cursor-pointer"
         >
           <ShoppingBag className="w-3.5 h-3.5" />
           <span>Add</span>

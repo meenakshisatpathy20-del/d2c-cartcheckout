@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, X, Trash2, ArrowRight, ShieldCheck, Tag, CheckCircle2, Truck, CreditCard } from 'lucide-react';
+import { ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { api } from '../../services/api';
 
@@ -9,29 +9,8 @@ export default function CartDrawer({ onProceedCheckout }) {
     discountAmount, grandTotal, appliedCoupon, setAppliedCoupon 
   } = useCart();
 
-  const [pincode, setPincode] = useState('');
-  const [deliveryResult, setDeliveryResult] = useState(null);
-  const [pinError, setPinError] = useState('');
-  const [loadingPin, setLoadingPin] = useState(false);
   const [couponInput, setCouponInput] = useState('');
   const [couponMsg, setCouponMsg] = useState('');
-
-  const handleVerifyPincode = async () => {
-    if (pincode.length !== 6 || isNaN(pincode)) {
-      setPinError('Enter a valid 6-digit PIN');
-      return;
-    }
-    setLoadingPin(true);
-    setPinError('');
-    try {
-      const res = await api.checkDelivery(pincode);
-      setDeliveryResult(res);
-    } catch (e) {
-      setPinError('Serviceable with standard dispatch');
-    } finally {
-      setLoadingPin(false);
-    }
-  };
 
   const handleApplyCustomCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -56,15 +35,12 @@ export default function CartDrawer({ onProceedCheckout }) {
     );
   }
 
-  // Free shipping threshold progress bar (Etsy / Shopify style)
   const freeShippingThreshold = 499;
   const progressPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
   return (
     <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* 1. Items List (2 Columns) */}
       <div className="lg:col-span-2 space-y-4">
-        {/* Free Shipping Progress Indicator */}
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs space-y-2">
           <div className="flex justify-between items-center font-bold text-blue-900">
             <span>{subtotal >= freeShippingThreshold ? '🎉 You have unlocked Free Shipping!' : `Add ₹${freeShippingThreshold - subtotal} more for Free Shipping`}</span>
@@ -128,7 +104,6 @@ export default function CartDrawer({ onProceedCheckout }) {
         </div>
       </div>
 
-      {/* 2. Transparent Pricing Breakdown (1 Column) */}
       <div className="space-y-4">
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
           <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-3">
@@ -156,7 +131,6 @@ export default function CartDrawer({ onProceedCheckout }) {
             </div>
           </div>
 
-          {/* Coupon Entry */}
           <div className="pt-2 border-t border-slate-100 space-y-2">
             <label className="text-[11px] font-bold text-slate-700 flex items-center">
               <Tag className="w-3.5 h-3.5 mr-1 text-orange-500" /> Have a Promo Code?

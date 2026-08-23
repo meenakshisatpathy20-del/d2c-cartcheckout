@@ -11,11 +11,12 @@ import CartDrawer from './components/cart/CartDrawer';
 import CheckoutModal from './components/checkout/CheckoutModal';
 import OrderSuccessModal from './components/checkout/OrderSuccessModal';
 import CustomerOrdersView from './components/order/CustomerOrdersView';
+import FranchisePortalView from './components/franchise/FranchisePortalView';
 import WarehouseHubView from './components/admin/WarehouseHubView';
 import Footer from './components/common/Footer';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState('store'); // 'store' | 'cart' | 'orders' | 'admin'
+  const [currentTab, setCurrentTab] = useState('store');
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +71,8 @@ export default function App() {
           </>
         )}
 
+        {currentTab === 'franchise' && <FranchisePortalView />}
+
         {currentTab === 'cart' && (
           <CartDrawer onProceedCheckout={() => setIsCheckoutOpen(true)} />
         )}
@@ -83,7 +86,6 @@ export default function App() {
           />
         )}
 
-        {/* Quick View Details Modal */}
         <ProductDetailModal
           product={selectedProduct}
           isOpen={Boolean(selectedProduct)}
@@ -91,7 +93,6 @@ export default function App() {
           onBuyNow={() => setIsCheckoutOpen(true)}
         />
 
-        {/* Fast Multi-Step Checkout Modal */}
         <CheckoutModal
           isOpen={isCheckoutOpen}
           onClose={() => setIsCheckoutOpen(false)}
@@ -101,7 +102,6 @@ export default function App() {
           }}
         />
 
-        {/* Flashing Order Confirmation */}
         <OrderSuccessModal
           order={confirmedOrder}
           isOpen={Boolean(confirmedOrder)}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, ShieldCheck, Mail, Phone, MapPin } from 'lucide-react';
+import { Phone } from 'lucide-react';
 
 export default function Footer() {
   return (

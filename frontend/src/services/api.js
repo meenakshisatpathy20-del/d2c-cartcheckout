@@ -1,12 +1,12 @@
-const D2C_BRANDS_CATALOG = [
+const D2C_CORE_PORTFOLIO = [
   {
     id: "sku-lux-01",
     brand: "Luxura Sciences",
     brandColor: "#059669",
     category: "beauty",
     warehouseCity: "Mumbai Bhiwandi Central Hub",
-    carrier: "Amazon Shipping India (Priority)",
-    name: "Vitamin C 20% Skin Glow Serum with Hyaluronic Acid (30ml)",
+    carrier: "Amazon Shipping India (Priority Air)",
+    name: "Vitamin C 20% Advanced Radiance Serum with Hyaluronic Acid (30ml)",
     price: 499,
     mrp: 899,
     stock: 142,
@@ -15,7 +15,7 @@ const D2C_BRANDS_CATALOG = [
     estimatedDays: 2,
     badge: "Bestseller",
     image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80",
-    description: "Pure cold-pressed Vitamin C antioxidant serum formulated with ferulic acid to brighten dull skin and diminish fine lines."
+    description: "Pure cold-pressed botanical Vitamin C antioxidant complex with ferulic acid to hydrate skin and reduce dark spots."
   },
   {
     id: "sku-lux-02",
@@ -24,7 +24,7 @@ const D2C_BRANDS_CATALOG = [
     category: "beauty",
     warehouseCity: "Mumbai Bhiwandi Central Hub",
     carrier: "Velocity Express Surface",
-    name: "Organic Cold Pressed Castor Oil for Hair Growth (250ml)",
+    name: "Organic Cold Pressed Virgin Castor Oil for Hair Growth (250ml)",
     price: 349,
     mrp: 599,
     stock: 98,
@@ -33,7 +33,7 @@ const D2C_BRANDS_CATALOG = [
     estimatedDays: 2,
     badge: "100% Organic",
     image: "https://images.unsplash.com/photo-1608248597359-58b68a427f71?w=600&q=80",
-    description: "Hexane-free, virgin cold-pressed botanical oil designed to nourish dry scalp and strengthen hair follicles."
+    description: "Hexane-free virgin botanical oil formulated to nourish roots, fortify hair follicles, and stimulate natural density."
   },
   {
     id: "sku-hun-01",
@@ -41,7 +41,7 @@ const D2C_BRANDS_CATALOG = [
     brandColor: "#2563EB",
     category: "electronics",
     warehouseCity: "Delhi NCR Air Express Depot",
-    carrier: "Amazon Shipping India (Air)",
+    carrier: "Amazon Shipping India (Air Express)",
     name: "Ultra Pro 2.01\" AMOLED Calling Smartwatch (Zinc Alloy Case)",
     price: 1999,
     mrp: 4999,
@@ -49,9 +49,9 @@ const D2C_BRANDS_CATALOG = [
     rating: 4.8,
     reviewsCount: 3120,
     estimatedDays: 2,
-    badge: "New Release",
+    badge: "Flagship",
     image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80",
-    description: "100+ active sports modes, crisp 60Hz AMOLED screen, real-time SpO2 monitoring, and IP68 waterproof housing."
+    description: "Ultra-sharp 60Hz AMOLED display with Bluetooth 5.3 voice calling, 100+ workout trackers, SpO2 sensor, and IP68 waterproof rating."
   },
   {
     id: "sku-hun-02",
@@ -67,9 +67,9 @@ const D2C_BRANDS_CATALOG = [
     rating: 4.7,
     reviewsCount: 1480,
     estimatedDays: 2,
-    badge: "High Bass",
+    badge: "Deep Bass",
     image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&q=80",
-    description: "13mm titanium drivers with dynamic bass boost and Environmental Noise Cancellation for distortion-free calls."
+    description: "13mm titanium drivers featuring Environmental Noise Cancellation, instant fast pair, and low-latency gaming mode."
   },
   {
     id: "sku-acc-01",
@@ -77,7 +77,7 @@ const D2C_BRANDS_CATALOG = [
     brandColor: "#D97706",
     category: "fashion",
     warehouseCity: "Jaipur Heritage Depot",
-    carrier: "Amazon Shipping India (Priority)",
+    carrier: "Amazon Shipping India (Priority Air)",
     name: "Traditional Gold-Plated Kundan Bridal Choker Set with Earrings",
     price: 1499,
     mrp: 3499,
@@ -85,9 +85,9 @@ const D2C_BRANDS_CATALOG = [
     rating: 4.9,
     reviewsCount: 1870,
     estimatedDays: 3,
-    badge: "Celebrity Choice",
+    badge: "Celebrity Endorsed",
     image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&q=80",
-    description: "Handcrafted antique gold-plated choker set with matching jhumkas, approved by celebrity fashion stylists."
+    description: "Handcrafted antique gold-plated Kundan necklace set with matching jhumkas, endorsed by Bollywood stylist runways."
   },
   {
     id: "sku-acc-02",
@@ -105,7 +105,7 @@ const D2C_BRANDS_CATALOG = [
     estimatedDays: 3,
     badge: "Trending",
     image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=600&q=80",
-    description: "Anti-tarnish polished zircon crystal drop earrings engineered for formal evenings and weddings."
+    description: "Anti-tarnish plated Austrian cubic zirconia drop earrings designed for gala parties, festivals, and weddings."
   },
   {
     id: "sku-kas-01",
@@ -114,16 +114,16 @@ const D2C_BRANDS_CATALOG = [
     category: "fitness",
     warehouseCity: "Bengaluru Whitefield Hub",
     carrier: "Amazon Shipping India (Surface)",
-    name: "High-Density Anti-Burst Gym Exercise Ball with Foot Pump (65cm)",
+    name: "Anti-Burst Heavy-Duty Core Stability Gym Ball with Pump (65cm)",
     price: 899,
     mrp: 1699,
     stock: 55,
     rating: 4.7,
     reviewsCount: 760,
     estimatedDays: 2,
-    badge: "Pro Gear",
+    badge: "Gym Grade",
     image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80",
-    description: "Durable honeycomb construction tested to support up to 300kg weight capacity for core and balance routines."
+    description: "High-density honeycomb structure tested up to 300kg capacity for yoga, physiotherapy, and functional workouts."
   },
   {
     id: "sku-swg-01",
@@ -132,20 +132,20 @@ const D2C_BRANDS_CATALOG = [
     category: "home",
     warehouseCity: "Jaipur Heritage Depot",
     carrier: "Velocity Express Surface",
-    name: "Handcrafted Stoneware Ceramic Dinner Set (12-Piece)",
+    name: "Handcrafted Artisanal Ceramic Dinner Set (12-Piece Stoneware)",
     price: 2499,
     mrp: 4999,
     stock: 28,
     rating: 4.9,
     reviewsCount: 1120,
     estimatedDays: 3,
-    badge: "Handcrafted",
+    badge: "Artisanal",
     image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=600&q=80",
-    description: "Microwave and dishwasher-safe artisan stoneware glazed with organic food-safe pigments."
+    description: "100% food-safe, microwave and dishwasher-friendly glazed stoneware handcrafted by master heritage artisans."
   }
 ];
 
-let localInventory = [...D2C_BRANDS_CATALOG];
+let localInventory = [...D2C_CORE_PORTFOLIO];
 
 let localOrders = [
   {
@@ -160,7 +160,7 @@ let localOrders = [
       name: "Meenakshi",
       phone: "+91 98765 43210",
       email: "meenakshi@d2csale.com",
-      address: "BIT Mesra Campus, Academic Area",
+      address: "Birla Institute of Technology, Mesra Campus",
       city: "Ranchi",
       pincode: "835215"
     },
@@ -173,7 +173,7 @@ let localOrders = [
         awb: "AWB9481023IN",
         courier: "Amazon Logistics Hub",
         status: "DELIVERED",
-        item: "Vitamin C 20% Skin Glow Serum with Hyaluronic Acid (30ml)",
+        item: "Vitamin C 20% Advanced Radiance Serum with Hyaluronic Acid (30ml)",
         qty: 1,
         image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80"
       },
@@ -230,9 +230,9 @@ export const api = {
         shipmentId: `PKG-${Math.floor(10000 + Math.random() * 90000)}`,
         brand: item.brand,
         pickupWarehouse: item.warehouseCity || "Mumbai Bhiwandi Central Hub",
-        carrier: idx % 2 === 0 ? "Amazon Shipping India" : "Velocity Air Logistics",
+        carrier: idx % 2 === 0 ? "Amazon Shipping India (Priority Air)" : "Velocity Express Air",
         awb: `AWB${Math.floor(10000000 + Math.random() * 90000000)}IN`,
-        courier: idx % 2 === 0 ? "Amazon Logistics" : "Velocity Express",
+        courier: idx % 2 === 0 ? "Amazon Logistics" : "Velocity Air Hub",
         status: "SHIPPED",
         item: item.name,
         qty: item.qty,
@@ -255,7 +255,7 @@ export const api = {
   trackOrder: async (orderId) => {
     const q = orderId.trim().toUpperCase();
     const matched = localOrders.find(o => o.orderId.toUpperCase() === q || o.fulfillments.some(f => f.awb.toUpperCase() === q));
-    if (!matched) throw new Error('No shipment found with this ID.');
+    if (!matched) throw new Error('No shipment record found.');
     return matched;
   },
 

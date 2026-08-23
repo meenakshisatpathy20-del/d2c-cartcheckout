@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Package, Store, Lock, Search, Heart, Sparkles, MapPin } from 'lucide-react';
+import { ShoppingBag, Package, Store, Building2, Search, Sparkles, Lock, ShieldCheck } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 export default function Header({ currentTab, setCurrentTab, searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, categories }) {
@@ -8,26 +8,24 @@ export default function Header({ currentTab, setCurrentTab, searchQuery, setSear
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
-      {/* 1. Flipkart/Amazon Style Top Strip */}
       <div className="bg-slate-900 text-slate-300 text-[11px] font-medium py-1.5 px-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <span className="text-emerald-400 font-bold flex items-center">
-              <Sparkles className="w-3.5 h-3.5 mr-1" /> 100% Brand Certified Direct
+              <ShieldCheck className="w-3.5 h-3.5 mr-1" /> 21 Categories • Times of India Direct Partner
             </span>
             <span className="text-slate-600 hidden sm:inline">•</span>
-            <span className="hidden sm:inline text-slate-300">Free Express Delivery on Orders Over ₹499</span>
+            <span className="hidden sm:inline text-slate-300">Pan-India Dispatch via Amazon Shipping & Velocity Express</span>
           </div>
           <button
             onClick={() => setCurrentTab('admin')}
             className="text-slate-400 hover:text-white flex items-center text-[10px] font-bold uppercase tracking-wider bg-slate-800 px-2.5 py-0.5 rounded transition cursor-pointer"
           >
-            <Lock className="w-3 h-3 mr-1 text-orange-400" /> Warehouse Operations Hub
+            <Lock className="w-3 h-3 mr-1 text-orange-400" /> Carrier & Warehouse Hub
           </button>
         </div>
       </div>
 
-      {/* 2. Main Search & Brand Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-4">
         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setCurrentTab('store')}>
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
@@ -38,43 +36,53 @@ export default function Header({ currentTab, setCurrentTab, searchQuery, setSear
               <span className="text-2xl font-black tracking-tight text-blue-600">D2C</span>
               <span className="text-2xl font-black tracking-tight text-orange-500">MALL</span>
             </div>
-            <p className="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Direct-to-Consumer Store</p>
+            <p className="text-[10px] font-bold text-slate-500 tracking-wider uppercase">One Stop Lifestyle Shop</p>
           </div>
         </div>
 
-        {/* Global Instant Search */}
         <div className="hidden md:flex flex-1 max-w-lg mx-6">
           <div className="relative w-full">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search for Products, Brands, Categories..."
+              placeholder="Search Luxura Sciences, Hungama HiLife, AccessHer..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition"
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition font-medium"
             />
           </div>
         </div>
 
-        {/* Customer Actions */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           <button
             onClick={() => setCurrentTab('store')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
-              currentTab === 'store' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'
+              currentTab === 'store' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span>Shop</span>
           </button>
 
           <button
+            onClick={() => setCurrentTab('franchise')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
+              currentTab === 'franchise'
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm font-black'
+                : 'text-orange-600 bg-orange-50 hover:bg-orange-100'
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>Franchise (FOFO/FOCO)</span>
+          </button>
+
+          <button
             onClick={() => setCurrentTab('orders')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
-              currentTab === 'orders' ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-100'
+              currentTab === 'orders' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <Package className="w-4 h-4" />
-            <span>My Orders & Returns</span>
+            <span className="hidden sm:inline">My Orders</span>
           </button>
 
           <button
@@ -91,7 +99,6 @@ export default function Header({ currentTab, setCurrentTab, searchQuery, setSear
         </div>
       </div>
 
-      {/* 3. Flipkart-Style Horizontal Category Strip */}
       <div className="bg-white border-t border-slate-100 px-4">
         <div className="max-w-7xl mx-auto flex items-center space-x-8 overflow-x-auto py-2.5 scrollbar-none text-xs font-bold text-slate-600">
           {categories.map((cat) => (
@@ -107,7 +114,7 @@ export default function Header({ currentTab, setCurrentTab, searchQuery, setSear
                   : 'border-transparent hover:text-slate-900'
               }`}
             >
-              {cat === 'ALL' ? 'For You' : cat.replace('-', ' ')}
+              {cat === 'ALL' ? 'All Lifestyle Brands' : cat.replace('-', ' ')}
             </button>
           ))}
         </div>

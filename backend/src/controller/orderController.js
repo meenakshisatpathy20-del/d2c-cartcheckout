@@ -1,28 +1,40 @@
-const { completedOrders } = require('../constants/catalog');
+const {
+  getOrderList
+} = require('../services/orderService');
 
-exports.getAllOrders = (req, res) => {
-  res.json(completedOrders);
+const getOrders = (req, res) => {
+  const orders = req.app.locals.completedOrders || [];
+
+  const result = getOrderList(orders, req.query);
+
+  res.json({
+    success: true,
+    ...result
+  });
 };
 
-exports.trackOrder = (req, res) => {
-  const q = req.params.query.trim().toUpperCase();
-  const matched = completedOrders.find(o => 
-    o.orderId.toUpperCase() === q || 
-    o.fulfillments.some(f => f.awb.toUpperCase() === q)
+const getOrderById = (req, res) => {
+  const orders = req.app.locals.completedOrders || [];
+
+  const order = orders.find(
+    (item) => item.orderId === req.params.orderId
   );
 
-  if (!matched) return res.status(404).json({ error: "No order or AWB found matching your query." });
-  res.json(matched);
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      error: 'Order not found',
+      code: 'ORDER_NOT_FOUND'
+    });
+  }
+
+  res.json({
+    success: true,
+    order
+  });
 };
 
-exports.updateShipmentStatus = (req, res) => {
-  const { orderId, shipmentId, newStatus } = req.body;
-  const order = completedOrders.find(o => o.orderId === orderId);
-  if (!order) return res.status(404).json({ error: "Order not found." });
-
-  const fulfillment = order.fulfillments.find(f => f.shipmentId === shipmentId);
-  if (!fulfillment) return res.status(404).json({ error: "Fulfillment record not found." });
-
-  fulfillment.status = newStatus;
-  res.json({ message: "Shipment status updated.", fulfillment });
+module.exports = {
+  getOrders,
+  getOrderById
 };

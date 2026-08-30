@@ -1,123 +1,203 @@
 import React, { useState } from 'react';
-import { LockKeyhole, Mail, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
-import { api } from '../../services/api';
+import {
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Warehouse,
+  ArrowRight,
+  AlertCircle,
+  Loader2
+} from 'lucide-react';
 
-export default function AdminLogin({ onLogin }) {
-  const [email, setEmail] = useState('admin@d2cmall.com');
-  const [password, setPassword] = useState('D2CMall@2026');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+export default function AdminLogin({
+  onLogin,
+  loading = false,
+  error = ''
+}) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] =
+    useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
 
-    try {
-      const data = await api.adminLogin(email, password);
+    if (!username.trim()) return;
+    if (!password) return;
 
-      localStorage.setItem('d2c_admin_token', data.token);
-      localStorage.setItem('d2c_admin', JSON.stringify(data.admin));
-
-      if (onLogin) {
-        onLogin(data.admin);
-      }
-    } catch (err) {
-      setError(err.message || 'Unable to sign in');
-    } finally {
-      setLoading(false);
+    if (onLogin) {
+      await onLogin({
+        username: username.trim(),
+        password
+      });
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 px-7 py-8 text-white">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center mb-5 shadow-lg">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      <div className="absolute -top-32 -right-32 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
+      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl" />
 
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300">
-              D2C Mall Operations
-            </p>
-
-            <h1 className="text-2xl font-black mt-2">
-              Warehouse Admin
-            </h1>
-
-            <p className="text-xs text-blue-200 mt-2">
-              Secure access to orders, customers, shipments and inventory.
-            </p>
+      <div className="w-full max-w-md relative z-10">
+        <div className="text-center mb-7">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-yellow-400 flex items-center justify-center shadow-2xl shadow-orange-500/20">
+            <Warehouse className="w-8 h-8 text-slate-950" />
           </div>
 
-          <form onSubmit={handleSubmit} className="p-7 space-y-5">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold">
-                {error}
-              </div>
-            )}
+          <h1 className="mt-5 text-2xl font-black text-white tracking-tight">
+            D2C MALL
+          </h1>
 
+          <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-orange-400">
+            Operations Console
+          </p>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+          <div className="px-7 pt-7 pb-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5 text-blue-700" />
+              </div>
+
+              <div>
+                <h2 className="text-lg font-black text-slate-950">
+                  Admin Sign In
+                </h2>
+
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Access orders, warehouse operations,
+                  shipments, customers and inventory.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mx-7 mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex gap-3">
+              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+
+              <div>
+                <p className="text-xs font-black text-red-800">
+                  Sign in failed
+                </p>
+
+                <p className="text-[11px] text-red-700 mt-0.5">
+                  {error}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            className="px-7 pb-7 space-y-5"
+          >
             <div>
-              <label className="block text-xs font-black text-slate-700 mb-2">
-                Admin Email
+              <label className="block text-[10px] uppercase tracking-wider font-black text-slate-600 mb-2">
+                Username
               </label>
 
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
 
                 <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  type="text"
+                  value={username}
+                  onChange={(e) =>
+                    setUsername(e.target.value)
+                  }
+                  placeholder="Enter admin username"
+                  autoComplete="username"
+                  disabled={loading}
+                  className="w-full h-12 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-600/10 disabled:opacity-60"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-black text-slate-700 mb-2">
+              <label className="block text-[10px] uppercase tracking-wider font-black text-slate-600 mb-2">
                 Password
               </label>
 
               <div className="relative">
-                <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
 
                 <input
-                  type="password"
-                  required
+                  type={
+                    showPassword
+                      ? 'text'
+                      : 'password'
+                  }
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-3 py-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
+                  placeholder="Enter admin password"
+                  autoComplete="current-password"
+                  disabled={loading}
+                  className="w-full h-12 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-11 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-600/10 disabled:opacity-60"
                 />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword(
+                      (prev) => !prev
+                    )
+                  }
+                  disabled={loading}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 disabled:opacity-50"
+                  aria-label={
+                    showPassword
+                      ? 'Hide password'
+                      : 'Show password'
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-slate-950 disabled:opacity-60 text-white rounded-xl py-3.5 font-black text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-blue-900/20"
+              disabled={
+                loading ||
+                !username.trim() ||
+                !password
+              }
+              className="w-full h-12 rounded-xl bg-slate-950 text-white text-sm font-black flex items-center justify-center gap-2 transition hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-slate-950/10"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Authenticating...
+                  Signing in...
                 </>
               ) : (
                 <>
-                  Sign in to Operations
+                  Enter Operations Console
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
+          </form>
 
-            <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <div className="border-t border-slate-100 px-7 py-4 bg-slate-50">
+            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 font-bold">
+              <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
               Protected warehouse operations
             </div>
-          </form>
+          </div>
         </div>
+
+        <p className="text-center text-[10px] text-slate-500 mt-5">
+          Authorized personnel only
+        </p>
       </div>
     </div>
   );

@@ -11,18 +11,25 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000;
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_mockKey123',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_mockSecret123'
+  key_id:
+    process.env.RAZORPAY_KEY_ID ||
+    'rzp_test_mockKey123',
+  key_secret:
+    process.env.RAZORPAY_KEY_SECRET ||
+    'rzp_secret_mockSecret123'
 });
 
-const ADMIN_EMAIL =
-  process.env.ADMIN_EMAIL || 'admin@d2cmall.com';
+const ADMIN_USERNAME =
+  process.env.ADMIN_USERNAME || 'admin';
 
 const ADMIN_PASSWORD =
   process.env.ADMIN_PASSWORD || 'D2CAdmin@2026';
 
-const adminSessions = new Map();
-const checkoutReservations = new Map();
+const SHIPROCKET_EMAIL =
+  process.env.SHIPROCKET_EMAIL || '';
+
+const SHIPROCKET_PASSWORD =
+  process.env.SHIPROCKET_PASSWORD || '';
 
 let inventory = [
   {
@@ -35,6 +42,7 @@ let inventory = [
     price: 829,
     mrp: 1299,
     stock: 99,
+    lowStockThreshold: 10,
     rating: 4.9,
     reviewsCount: 1420,
     estimatedDays: 2,
@@ -53,6 +61,7 @@ let inventory = [
     price: 1659,
     mrp: 2499,
     stock: 34,
+    lowStockThreshold: 10,
     rating: 4.8,
     reviewsCount: 890,
     estimatedDays: 3,
@@ -66,11 +75,13 @@ let inventory = [
     brand: 'Velvet Touch',
     brandColor: '#FF6B00',
     category: 'beauty',
-    warehouseCity: 'Bengaluru Whitefield Hub',
+    warehouseCity:
+      'Bengaluru Whitefield Hub',
     name: 'Powder Canister Compact',
     price: 1244,
     mrp: 1899,
     stock: 89,
+    lowStockThreshold: 10,
     rating: 4.7,
     reviewsCount: 650,
     estimatedDays: 2,
@@ -84,11 +95,13 @@ let inventory = [
     brand: 'Chic Fragrance',
     brandColor: '#8B5CF6',
     category: 'fragrances',
-    warehouseCity: 'Jaipur Depot Hub',
+    warehouseCity:
+      'Jaipur Depot Hub',
     name: 'Calvin Klein CK One EDT (100ml)',
     price: 3499,
     mrp: 5200,
     stock: 45,
+    lowStockThreshold: 10,
     rating: 4.9,
     reviewsCount: 2100,
     estimatedDays: 3,
@@ -104,126 +117,107 @@ let completedOrders = [
     orderId: 'D2C-849201',
     invoiceNumber: 'INV-2026-88190',
     placedAt: new Date(
-      Date.now() - 24 * 60 * 60 * 1000
+      Date.now() - 86400000
     ).toISOString(),
-    updatedAt: new Date().toISOString(),
     status: 'DELIVERED',
     paymentStatus: 'PAID',
     paymentMethod: 'UPI / Razorpay Verified',
     returnRequested: false,
     customer: {
-      customerId: 'CUS-98765432',
+      customerId: 'CUS-10001',
       name: 'Meenakshi',
       phone: '+91 98765 43210',
       email: 'meenakshi@d2csale.com',
-      address: 'BIT Mesra Campus, Technology Block',
+      address:
+        'BIT Mesra Campus, Technology Block',
       city: 'Ranchi',
+      state: 'Jharkhand',
       pincode: '835215'
     },
     fulfillments: [
       {
         shipmentId: 'SR-8201',
         brand: 'Essence',
-        pickupWarehouse: 'Mumbai Bhiwandi Hub',
+        pickupWarehouse:
+          'Mumbai Bhiwandi Hub',
         awb: 'AWB9481023IN',
-        carrier: 'Shiprocket',
-        courier: 'Delhivery Surface',
+        courier:
+          'Delhivery Surface',
         status: 'DELIVERED',
-        item: 'Essence Mascara Lash Princess',
-        skuId: 'sku-1',
+        item:
+          'Essence Mascara Lash Princess',
         qty: 1,
         image:
           'https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png',
-        trackingUrl:
-          'https://www.shiprocket.in/shipment-tracking/',
-        history: [
+        trackingEvents: [
           {
-            status: 'ORDER_CONFIRMED',
-            title: 'Order Confirmed',
+            status: 'CONFIRMED',
+            location: 'Mumbai',
             timestamp: new Date(
-              Date.now() - 24 * 60 * 60 * 1000
+              Date.now() - 82000000
             ).toISOString()
           },
           {
             status: 'SHIPPED',
-            title: 'Packed & Dispatched',
+            location: 'Mumbai Bhiwandi',
             timestamp: new Date(
-              Date.now() - 22 * 60 * 60 * 1000
+              Date.now() - 70000000
             ).toISOString()
           },
           {
             status: 'IN_TRANSIT',
-            title: 'In Transit',
+            location: 'Ranchi',
             timestamp: new Date(
-              Date.now() - 18 * 60 * 60 * 1000
-            ).toISOString()
-          },
-          {
-            status: 'OUT_FOR_DELIVERY',
-            title: 'Out for Delivery',
-            timestamp: new Date(
-              Date.now() - 5 * 60 * 60 * 1000
+              Date.now() - 30000000
             ).toISOString()
           },
           {
             status: 'DELIVERED',
-            title: 'Delivered',
-            timestamp: new Date(
-              Date.now() - 2 * 60 * 60 * 1000
-            ).toISOString()
+            location: 'Ranchi',
+            timestamp: new Date().toISOString()
           }
         ]
       },
       {
         shipmentId: 'SR-8202',
         brand: 'Glamour',
-        pickupWarehouse: 'Delhi NCR Hub',
+        pickupWarehouse:
+          'Delhi NCR Hub',
         awb: 'AWB9481024IN',
-        carrier: 'Shiprocket',
-        courier: 'Blue Dart Air',
+        courier:
+          'Blue Dart Air',
         status: 'DELIVERED',
-        item: 'Eyeshadow Palette with Mirror',
-        skuId: 'sku-2',
+        item:
+          'Eyeshadow Palette with Mirror',
         qty: 1,
         image:
           'https://cdn.dummyjson.com/products/images/beauty/Eyeshadow%20Palette%20with%20Mirror/thumbnail.png',
-        trackingUrl:
-          'https://www.shiprocket.in/shipment-tracking/',
-        history: [
+        trackingEvents: [
           {
-            status: 'ORDER_CONFIRMED',
-            title: 'Order Confirmed',
+            status: 'CONFIRMED',
+            location: 'Delhi NCR',
             timestamp: new Date(
-              Date.now() - 24 * 60 * 60 * 1000
+              Date.now() - 82000000
             ).toISOString()
           },
           {
             status: 'SHIPPED',
-            title: 'Packed & Dispatched',
+            location: 'Delhi NCR',
             timestamp: new Date(
-              Date.now() - 22 * 60 * 60 * 1000
+              Date.now() - 70000000
             ).toISOString()
           },
           {
             status: 'IN_TRANSIT',
-            title: 'In Transit',
+            location: 'Ranchi',
             timestamp: new Date(
-              Date.now() - 18 * 60 * 60 * 1000
-            ).toISOString()
-          },
-          {
-            status: 'OUT_FOR_DELIVERY',
-            title: 'Out for Delivery',
-            timestamp: new Date(
-              Date.now() - 5 * 60 * 60 * 1000
+              Date.now() - 30000000
             ).toISOString()
           },
           {
             status: 'DELIVERED',
-            title: 'Delivered',
-            timestamp: new Date(
-              Date.now() - 2 * 60 * 60 * 1000
-            ).toISOString()
+            location: 'Ranchi',
+            timestamp: new Date().toISOString()
           }
         ]
       }
@@ -237,750 +231,566 @@ let completedOrders = [
   }
 ];
 
-let franchiseLeads = [
+const warehouses = [
   {
-    id: 'LEAD-1001',
-    name: 'Rahul Sharma',
-    phone: '+91 98765 11111',
-    email: 'rahul@example.com',
-    city: 'Delhi',
-    preferredModel: 'FOFO',
-    investmentRange: '₹25L - ₹50L',
-    status: 'NEW',
-    createdAt: new Date().toISOString()
+    id: 'WH-MUM',
+    name: 'Mumbai Bhiwandi Hub',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    pincode: '421302',
+    active: true
   },
   {
-    id: 'LEAD-1002',
-    name: 'Ananya Singh',
-    phone: '+91 98765 22222',
-    email: 'ananya@example.com',
+    id: 'WH-DEL',
+    name: 'Delhi NCR Hub',
+    city: 'Delhi',
+    state: 'Delhi',
+    pincode: '110001',
+    active: true
+  },
+  {
+    id: 'WH-BLR',
+    name: 'Bengaluru Whitefield Hub',
     city: 'Bengaluru',
-    preferredModel: 'FOCO',
-    investmentRange: '₹50L - ₹1Cr',
-    status: 'CONTACTED',
-    createdAt: new Date(
-      Date.now() - 48 * 60 * 60 * 1000
-    ).toISOString()
+    state: 'Karnataka',
+    pincode: '560066',
+    active: true
+  },
+  {
+    id: 'WH-JAI',
+    name: 'Jaipur Depot Hub',
+    city: 'Jaipur',
+    state: 'Rajasthan',
+    pincode: '302001',
+    active: true
   }
 ];
 
-const getCustomerId = (customer = {}, orderId = '') => {
-  if (customer.customerId) {
-    return customer.customerId;
-  }
+const adminSessions = new Map();
 
-  const source =
-    customer.phone ||
-    customer.email ||
-    orderId;
-
-  const digits = String(source)
-    .replace(/\D/g, '')
-    .slice(-8);
-
-  return `CUS-${digits || '00000000'}`;
-};
-
-const getOrderStatus = (order) => {
-  if (!order) {
-    return 'CONFIRMED';
-  }
-
-  if (!order.fulfillments?.length) {
-    return order.status || 'CONFIRMED';
-  }
-
-  const statuses = order.fulfillments.map(
-    (shipment) => shipment.status
-  );
-
-  if (
-    statuses.length > 0 &&
-    statuses.every(
-      (status) => status === 'DELIVERED'
-    )
-  ) {
-    return 'DELIVERED';
-  }
-
-  if (
-    statuses.some(
-      (status) => status === 'OUT_FOR_DELIVERY'
-    )
-  ) {
-    return 'OUT_FOR_DELIVERY';
-  }
-
-  if (
-    statuses.some(
-      (status) => status === 'IN_TRANSIT'
-    )
-  ) {
-    return 'IN_TRANSIT';
-  }
-
-  if (
-    statuses.some((status) =>
-      ['SHIPPED', 'READY_TO_SHIP'].includes(
-        status
-      )
-    )
-  ) {
-    return 'SHIPPED';
-  }
-
-  return order.status || 'CONFIRMED';
-};
-
-const enrichOrder = (order) => {
-  const customer = {
-    ...(order.customer || {})
-  };
-
-  customer.customerId = getCustomerId(
-    customer,
-    order.orderId
-  );
-
-  return {
-    ...order,
-    status: getOrderStatus(order),
-    customer,
-    fulfillments: (
-      order.fulfillments || []
-    ).map((shipment) => ({
-      ...shipment,
-      carrier:
-        shipment.carrier ||
-        shipment.courier ||
-        'Shiprocket',
-      trackingUrl:
-        shipment.trackingUrl ||
-        'https://www.shiprocket.in/shipment-tracking/',
-      history:
-        shipment.history || []
-    }))
-  };
-};
-
-const getOrCreateCustomerId = (customer) =>
-  getCustomerId(customer);
-
-const requireAdmin = (req, res, next) => {
-  const authorization =
-    req.headers.authorization || '';
-
-  if (!authorization.startsWith('Bearer ')) {
-    return res.status(401).json({
-      message: 'Admin authentication required'
-    });
-  }
-
-  const token = authorization.slice(7);
-  const session = adminSessions.get(token);
-
-  if (!session) {
-    return res.status(401).json({
-      message: 'Invalid or expired admin session'
-    });
-  }
-
-  req.admin = session;
-  next();
-};
-
-const createOrderFromItems = ({
-  items,
-  customer,
-  discountAmount = 0,
-  shippingFee = 50,
-  paymentMethod = 'UPI / Razorpay'
-}) => {
-  const safeItems = Array.isArray(items)
-    ? items
-    : [];
-
-  const orderId = `D2C-${Math.floor(
+function generateOrderId() {
+  return `D2C-${Math.floor(
     100000 + Math.random() * 900000
   )}`;
+}
 
-  const invoiceNumber = `INV-2026-${Math.floor(
+function generateInvoiceNumber() {
+  return `INV-2026-${Math.floor(
     10000 + Math.random() * 90000
   )}`;
+}
 
-  const customerWithId = {
-    ...(customer || {}),
-    customerId: getOrCreateCustomerId(
-      customer || {}
-    )
-  };
+function generateShipmentId() {
+  return `SR-${Math.floor(
+    10000 + Math.random() * 90000
+  )}`;
+}
 
-  const subtotal = safeItems.reduce(
-    (total, item) => {
-      const product = inventory.find(
-        (productItem) =>
-          productItem.id === item.skuId
-      );
+function generateAwb() {
+  return `AWB${Math.floor(
+    10000000 + Math.random() * 90000000
+  )}IN`;
+}
 
-      if (!product) {
-        return total;
-      }
+function normalizeStatus(status) {
+  return String(status || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+}
 
-      return (
-        total +
-        Number(product.price) *
-          Number(item.qty || 0)
-      );
-    },
-    0
+function getAllShipments() {
+  return completedOrders.flatMap(
+    (order) =>
+      (order.fulfillments || []).map(
+        (shipment) => ({
+          ...shipment,
+          orderId: order.orderId,
+          invoiceNumber:
+            order.invoiceNumber,
+          placedAt: order.placedAt,
+          orderStatus: order.status,
+          paymentStatus:
+            order.paymentStatus,
+          customer:
+            order.customer || {}
+        })
+      )
   );
+}
 
-  const fulfillments = safeItems
-    .map((item, index) => {
-      const product = inventory.find(
-        (productItem) =>
-          productItem.id === item.skuId
-      );
+function getCustomers() {
+  const map = new Map();
 
-      if (!product) {
-        return null;
-      }
+  completedOrders.forEach((order) => {
+    const customer =
+      order.customer || {};
 
-      const shipmentId = `SR-${Math.floor(
-        10000 + Math.random() * 90000
-      )}`;
+    const key =
+      customer.phone ||
+      customer.email ||
+      customer.name;
 
-      const now = new Date().toISOString();
+    if (!key) return;
 
-      return {
-        shipmentId,
-        brand: product.brand,
-        pickupWarehouse:
-          product.warehouseCity,
-        awb: `AWB${Math.floor(
-          10000000 +
-            Math.random() * 90000000
-        )}IN`,
-        carrier: 'Shiprocket',
-        courier:
-          index % 2 === 0
-            ? 'Delhivery Surface'
-            : 'Blue Dart Air',
-        status: 'SHIPPED',
-        item: product.name,
-        skuId: product.id,
-        qty: Number(item.qty || 0),
-        image: product.image,
-        trackingUrl:
-          'https://www.shiprocket.in/shipment-tracking/',
-        history: [
-          {
-            status: 'ORDER_CONFIRMED',
-            title: 'Order Confirmed',
-            timestamp: now
-          },
-          {
-            status: 'SHIPPED',
-            title: 'Packed & Dispatched',
-            timestamp: now
-          }
-        ]
-      };
-    })
-    .filter(Boolean);
-
-  const safeDiscount = Math.max(
-    0,
-    Math.min(
-      Number(discountAmount || 0),
-      subtotal
-    )
-  );
-
-  const safeShipping = Math.max(
-    0,
-    Number(shippingFee || 0)
-  );
-
-  const totalPaid = Math.max(
-    0,
-    subtotal +
-      safeShipping -
-      safeDiscount
-  );
-
-  return {
-    orderId,
-    invoiceNumber,
-    placedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    status: 'CONFIRMED',
-    paymentStatus: 'PAID',
-    paymentMethod,
-    returnRequested: false,
-    customer: customerWithId,
-    fulfillments,
-    summary: {
-      itemSubtotal: subtotal,
-      shippingFee: safeShipping,
-      discountAmount: safeDiscount,
-      totalPaid
+    if (!map.has(key)) {
+      map.set(key, {
+        customerId:
+          customer.customerId ||
+          `CUS-${uuidv4()
+            .slice(0, 8)
+            .toUpperCase()}`,
+        ...customer,
+        orderCount: 0,
+        lifetimeSpend: 0,
+        returnCount: 0,
+        lastOrderAt: null
+      });
     }
-  };
-};
+
+    const existing = map.get(key);
+
+    existing.orderCount += 1;
+
+    existing.lifetimeSpend +=
+      Number(
+        order.summary?.totalPaid || 0
+      );
+
+    if (order.returnRequested) {
+      existing.returnCount += 1;
+    }
+
+    if (
+      !existing.lastOrderAt ||
+      new Date(order.placedAt) >
+        new Date(existing.lastOrderAt)
+    ) {
+      existing.lastOrderAt =
+        order.placedAt;
+    }
+  });
+
+  return Array.from(map.values()).map(
+    (customer) => ({
+      ...customer,
+      averageOrderValue:
+        customer.orderCount > 0
+          ? Math.round(
+              customer.lifetimeSpend /
+                customer.orderCount
+            )
+          : 0
+    })
+  );
+}
+
+function requireAdmin(req, res, next) {
+  const token =
+    req.headers.authorization?.replace(
+      'Bearer ',
+      ''
+    );
+
+  if (!token || !adminSessions.has(token)) {
+    return res.status(401).json({
+      error: 'Admin authentication required.'
+    });
+  }
+
+  req.admin = adminSessions.get(token);
+
+  next();
+}
+
+function addTrackingEvent(
+  shipment,
+  status,
+  location = 'India'
+) {
+  if (!shipment.trackingEvents) {
+    shipment.trackingEvents = [];
+  }
+
+  shipment.trackingEvents.push({
+    status,
+    location,
+    timestamp:
+      new Date().toISOString()
+  });
+}
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    service: 'D2C Mall API',
+    timestamp:
+      new Date().toISOString()
+  });
+});
 
 app.get('/api/products', (req, res) => {
   res.json(inventory);
 });
 
-app.post('/api/delivery/check', (req, res) => {
-  const { pincode } = req.body;
-
-  if (
-    !pincode ||
-    String(pincode).length !== 6 ||
-    Number.isNaN(Number(pincode))
-  ) {
-    return res.status(400).json({
-      error:
-        'Enter a valid 6-digit pin code.'
-    });
-  }
-
-  const isJharkhand = String(
-    pincode
-  ).startsWith('83');
-
-  res.json({
-    deliverable: true,
-    estimatedDays: isJharkhand ? 2 : 3,
-    courierPartner: isJharkhand
-      ? 'Delhivery Surface'
-      : 'Blue Dart Air',
-    shippingFee:
-      Number(pincode) % 2 === 0 ? 0 : 50
-  });
+app.get('/api/warehouses', (req, res) => {
+  res.json(warehouses);
 });
 
-app.post('/api/coupons/validate', (req, res) => {
-  const {
-    code,
-    cartTotal = 0
-  } = req.body;
-
-  const coupon =
-    String(code || '').toUpperCase();
-
-  if (
-    coupon === 'D2C100' &&
-    Number(cartTotal) >= 999
-  ) {
-    return res.json({
-      discountAmount: 100,
-      code: coupon
-    });
-  }
-
-  if (
-    coupon === 'FREESHIP' &&
-    Number(cartTotal) >= 499
-  ) {
-    return res.json({
-      discountAmount: 50,
-      code: coupon
-    });
-  }
-
-  if (
-    coupon === 'FESTIVE20' &&
-    Number(cartTotal) >= 1999
-  ) {
-    return res.json({
-      discountAmount: Math.round(
-        Number(cartTotal) * 0.2
-      ),
-      code: coupon
-    });
-  }
-
-  return res.status(404).json({
-    message:
-      'Invalid coupon or minimum order value not reached.'
-  });
-});
-
-app.post('/api/checkout/initiate', async (req, res) => {
-  const {
-    items = [],
-    customer = {},
-    discountAmount = 0,
-    shippingFee = 50
-  } = req.body;
-
-  if (!items.length) {
-    return res.status(400).json({
-      message: 'Cart is empty'
-    });
-  }
-
-  for (const item of items) {
-    const product = inventory.find(
-      (productItem) =>
-        productItem.id === item.skuId
-    );
-
-    if (!product) {
-      return res.status(404).json({
-        message: `Product ${item.skuId} not found`
-      });
-    }
+app.post(
+  '/api/delivery/check',
+  (req, res) => {
+    const { pincode } = req.body;
 
     if (
-      Number(item.qty) <= 0 ||
-      Number(item.qty) > product.stock
+      !pincode ||
+      String(pincode).length !== 6 ||
+      Number.isNaN(Number(pincode))
     ) {
       return res.status(400).json({
-        message: `Insufficient stock for ${product.name}`
+        error:
+          'Enter a valid 6-digit pin code.'
       });
     }
+
+    res.json({
+      deliverable: true,
+      estimatedDays:
+        String(pincode).startsWith('83')
+          ? 2
+          : 3,
+      courierPartner:
+        String(pincode).startsWith('83')
+          ? 'Delhivery Surface'
+          : 'Blue Dart Air'
+    });
   }
+);
 
-  const reservationId =
-    `RES-${uuidv4()}`;
+app.post(
+  '/api/coupons/validate',
+  (req, res) => {
+    const {
+      code,
+      cartTotal
+    } = req.body;
 
-  const reservation = {
-    reservationId,
-    items,
-    customer,
-    discountAmount,
-    shippingFee,
-    createdAt: Date.now(),
-    expiresAt:
-      Date.now() + 10 * 60 * 1000
-  };
+    const coupon =
+      code?.toUpperCase();
 
-  checkoutReservations.set(
-    reservationId,
-    reservation
-  );
+    if (coupon === 'D2C100') {
+      return res.json({
+        discountAmount: 100
+      });
+    }
 
-  const subtotal = items.reduce(
-    (total, item) => {
-      const product = inventory.find(
-        (productItem) =>
-          productItem.id === item.skuId
-      );
+    if (coupon === 'FREESHIP') {
+      return res.json({
+        discountAmount: 50
+      });
+    }
 
-      return (
-        total +
-        Number(product.price) *
-          Number(item.qty)
-      );
-    },
-    0
-  );
+    if (coupon === 'FESTIVE20') {
+      return res.json({
+        discountAmount: Math.round(
+          Number(cartTotal || 0) *
+            0.2
+        )
+      });
+    }
 
-  const total = Math.max(
-    0,
-    subtotal +
-      Number(shippingFee || 0) -
-      Number(discountAmount || 0)
-  );
+    res.status(404).json({
+      message: 'Invalid promo code'
+    });
+  }
+);
 
-  let razorpayOrderId =
-    `order_mock_${Date.now()}`;
+app.post(
+  '/api/checkout/order',
+  async (req, res) => {
+    try {
+      const {
+        items = [],
+        customer,
+        discountAmount = 0,
+        shippingFee = 50
+      } = req.body;
 
-  try {
-    if (
-      process.env.RAZORPAY_KEY_ID &&
-      process.env.RAZORPAY_KEY_SECRET
-    ) {
-      const razorpayOrder =
-        await razorpay.orders.create({
-          amount: Math.round(total * 100),
-          currency: 'INR',
-          receipt: reservationId
+      if (!items.length) {
+        return res.status(400).json({
+          error: 'Cart is empty.'
+        });
+      }
+
+      const orderId =
+        generateOrderId();
+
+      const invoiceNumber =
+        generateInvoiceNumber();
+
+      const fulfillments =
+        items.map((item, index) => {
+          const product =
+            inventory.find(
+              (p) =>
+                p.id === item.skuId
+            );
+
+          if (!product) {
+            throw new Error(
+              `Product ${item.skuId} not found.`
+            );
+          }
+
+          if (
+            Number(item.qty) <= 0 ||
+            Number(item.qty) >
+              product.stock
+          ) {
+            throw new Error(
+              `Insufficient stock for ${product.name}.`
+            );
+          }
+
+          return {
+            shipmentId:
+              generateShipmentId(),
+            brand:
+              product.brand,
+            pickupWarehouse:
+              product.warehouseCity,
+            awb: generateAwb(),
+            courier:
+              index % 2 === 0
+                ? 'Delhivery Surface'
+                : 'Blue Dart Air',
+            status: 'CONFIRMED',
+            item: product.name,
+            skuId: product.id,
+            qty: Number(item.qty),
+            image: product.image,
+            trackingEvents: [
+              {
+                status: 'CONFIRMED',
+                location:
+                  product.warehouseCity,
+                timestamp:
+                  new Date().toISOString()
+              }
+            ]
+          };
         });
 
-      razorpayOrderId =
-        razorpayOrder.id;
-    }
-  } catch (error) {
-    razorpayOrderId =
-      `order_mock_${Date.now()}`;
-  }
+      const subtotal =
+        items.reduce(
+          (total, item) => {
+            const product =
+              inventory.find(
+                (p) =>
+                  p.id === item.skuId
+              );
 
-  res.json({
-    reservationId,
-    expiresInSeconds: 600,
-    keyId:
-      process.env.RAZORPAY_KEY_ID || '',
-    amount: Math.round(total * 100),
-    currency: 'INR',
-    razorpayOrderId
-  });
-});
+            return (
+              total +
+              product.price *
+                Number(item.qty)
+            );
+          },
+          0
+        );
 
-app.post('/api/checkout/verify', async (req, res) => {
-  const {
-    reservationId,
-    razorpay_order_id,
-    razorpay_payment_id
-  } = req.body;
+      items.forEach((item) => {
+        const product =
+          inventory.find(
+            (p) =>
+              p.id === item.skuId
+          );
 
-  const reservation =
-    checkoutReservations.get(
-      reservationId
-    );
+        product.stock -= Number(
+          item.qty
+        );
+      });
 
-  if (!reservation) {
-    return res.status(404).json({
-      message:
-        'Checkout reservation not found or expired.'
-    });
-  }
+      const finalOrder = {
+        orderId,
+        invoiceNumber,
+        placedAt:
+          new Date().toISOString(),
+        status: 'CONFIRMED',
+        paymentStatus: 'PAID',
+        paymentMethod:
+          'UPI / Razorpay',
+        returnRequested: false,
+        customer: {
+          customerId:
+            `CUS-${uuidv4()
+              .slice(0, 8)
+              .toUpperCase()}`,
+          ...customer
+        },
+        fulfillments,
+        summary: {
+          itemSubtotal: subtotal,
+          shippingFee:
+            Number(shippingFee),
+          discountAmount:
+            Number(discountAmount),
+          totalPaid: Math.max(
+            1,
+            subtotal +
+              Number(shippingFee) -
+              Number(discountAmount)
+          )
+        }
+      };
 
-  if (
-    Date.now() >
-    reservation.expiresAt
-  ) {
-    checkoutReservations.delete(
-      reservationId
-    );
+      completedOrders.unshift(
+        finalOrder
+      );
 
-    return res.status(410).json({
-      message:
-        'Checkout reservation expired.'
-    });
-  }
-
-  for (const item of reservation.items) {
-    const product = inventory.find(
-      (productItem) =>
-        productItem.id === item.skuId
-    );
-
-    if (
-      !product ||
-      Number(product.stock) <
-        Number(item.qty)
-    ) {
-      return res.status(409).json({
-        message:
-          'Stock changed during checkout. Please try again.'
+      res.json(finalOrder);
+    } catch (error) {
+      res.status(400).json({
+        error: error.message
       });
     }
   }
-
-  reservation.items.forEach((item) => {
-    const product = inventory.find(
-      (productItem) =>
-        productItem.id === item.skuId
-    );
-
-    product.stock -= Number(item.qty);
-  });
-
-  const order =
-    createOrderFromItems({
-      items: reservation.items,
-      customer: reservation.customer,
-      discountAmount:
-        reservation.discountAmount,
-      shippingFee:
-        reservation.shippingFee,
-      paymentMethod:
-        razorpay_payment_id
-          ? 'UPI / Razorpay'
-          : 'UPI / Razorpay Simulated'
-    });
-
-  order.payment = {
-    razorpayOrderId:
-      razorpay_order_id ||
-      'mock-order',
-    razorpayPaymentId:
-      razorpay_payment_id ||
-      `pay_sim_${Date.now()}`,
-    verifiedAt:
-      new Date().toISOString()
-  };
-
-  completedOrders.unshift(order);
-
-  checkoutReservations.delete(
-    reservationId
-  );
-
-  res.json(enrichOrder(order));
-});
-
-app.post('/api/checkout/order', (req, res) => {
-  const {
-    items = [],
-    customer = {},
-    discountAmount = 0,
-    shippingFee = 50
-  } = req.body;
-
-  if (!items.length) {
-    return res.status(400).json({
-      message: 'Cart is empty'
-    });
-  }
-
-  for (const item of items) {
-    const product = inventory.find(
-      (productItem) =>
-        productItem.id === item.skuId
-    );
-
-    if (!product) {
-      return res.status(404).json({
-        message:
-          `Product ${item.skuId} not found`
-      });
-    }
-
-    if (
-      Number(item.qty) <= 0 ||
-      Number(item.qty) > product.stock
-    ) {
-      return res.status(400).json({
-        message:
-          `Insufficient stock for ${product.name}`
-      });
-    }
-  }
-
-  items.forEach((item) => {
-    const product = inventory.find(
-      (productItem) =>
-        productItem.id === item.skuId
-    );
-
-    product.stock -= Number(item.qty);
-  });
-
-  const order =
-    createOrderFromItems({
-      items,
-      customer,
-      discountAmount,
-      shippingFee
-    });
-
-  completedOrders.unshift(order);
-
-  res.json(enrichOrder(order));
-});
+);
 
 app.get('/api/orders', (req, res) => {
-  res.json(
-    completedOrders.map(enrichOrder)
-  );
+  res.json(completedOrders);
 });
 
-app.get('/api/orders/:orderId', (req, res) => {
-  const order = completedOrders.find(
-    (item) =>
-      item.orderId === req.params.orderId
-  );
+app.get(
+  '/api/orders/:orderId',
+  (req, res) => {
+    const order =
+      completedOrders.find(
+        (item) =>
+          item.orderId ===
+          req.params.orderId
+      );
 
-  if (!order) {
-    return res.status(404).json({
-      message: 'Order not found'
+    if (!order) {
+      return res.status(404).json({
+        error: 'Order not found.'
+      });
+    }
+
+    res.json(order);
+  }
+);
+
+app.get(
+  '/api/orders/:orderId/tracking',
+  (req, res) => {
+    const order =
+      completedOrders.find(
+        (item) =>
+          item.orderId ===
+          req.params.orderId
+      );
+
+    if (!order) {
+      return res.status(404).json({
+        error: 'Order not found.'
+      });
+    }
+
+    res.json({
+      orderId: order.orderId,
+      status: order.status,
+      shipments:
+        order.fulfillments || []
     });
   }
+);
 
-  res.json(enrichOrder(order));
-});
+app.post(
+  '/api/orders/return',
+  (req, res) => {
+    const {
+      orderId,
+      reason,
+      refundMethod
+    } = req.body;
 
-app.post('/api/orders/return', (req, res) => {
-  const {
-    orderId,
-    reason,
-    refundMethod = 'ORIGINAL'
-  } = req.body;
+    const order =
+      completedOrders.find(
+        (item) =>
+          item.orderId === orderId
+      );
 
-  const order = completedOrders.find(
-    (item) =>
-      item.orderId === orderId
-  );
+    if (!order) {
+      return res.status(404).json({
+        error: 'Order not found.'
+      });
+    }
 
-  if (!order) {
-    return res.status(404).json({
-      message: 'Order not found'
+    order.returnRequested = true;
+
+    order.returnDetails = {
+      reason,
+      refundMethod,
+      requestedAt:
+        new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      order
     });
   }
+);
 
-  order.returnRequested = true;
-  order.status = 'RETURN_REQUESTED';
-  order.updatedAt =
-    new Date().toISOString();
+app.post(
+  '/api/admin/login',
+  (req, res) => {
+    const {
+      username,
+      password
+    } = req.body;
 
-  order.returnDetails = {
-    reason,
-    refundMethod,
-    requestedAt:
-      new Date().toISOString(),
-    pickupStatus:
-      'PICKUP_SCHEDULED'
-  };
+    if (
+      username !== ADMIN_USERNAME ||
+      password !== ADMIN_PASSWORD
+    ) {
+      return res.status(401).json({
+        error:
+          'Invalid admin credentials.'
+      });
+    }
 
-  res.json({
-    success: true,
-    order: enrichOrder(order)
-  });
-});
+    const token =
+      uuidv4();
 
-app.post('/api/admin/login', (req, res) => {
-  const {
-    email,
-    password
-  } = req.body;
+    adminSessions.set(token, {
+      username,
+      role: 'ADMIN',
+      loggedInAt:
+        new Date().toISOString()
+    });
 
-  if (
-    email !== ADMIN_EMAIL ||
-    password !== ADMIN_PASSWORD
-  ) {
-    return res.status(401).json({
-      message:
-        'Invalid admin email or password'
+    res.json({
+      success: true,
+      token,
+      admin: {
+        username,
+        role: 'ADMIN'
+      }
     });
   }
-
-  const token = uuidv4();
-
-  const session = {
-    email: ADMIN_EMAIL,
-    role: 'WAREHOUSE_ADMIN',
-    name: 'D2C Mall Operations Admin',
-    loginAt:
-      new Date().toISOString()
-  };
-
-  adminSessions.set(
-    token,
-    session
-  );
-
-  res.json({
-    success: true,
-    token,
-    admin: session
-  });
-});
+);
 
 app.post(
   '/api/admin/logout',
   requireAdmin,
   (req, res) => {
-    const authorization =
-      req.headers.authorization || '';
-
     const token =
-      authorization.substring(7);
+      req.headers.authorization?.replace(
+        'Bearer ',
+        ''
+      );
 
     adminSessions.delete(token);
 
@@ -991,67 +801,45 @@ app.post(
 );
 
 app.get(
-  '/api/admin/health',
+  '/api/admin/dashboard',
   requireAdmin,
   (req, res) => {
-    res.json({
-      success: true,
-      status: 'OPERATIONAL',
-      service:
-        'D2C Mall Operations API',
-      timestamp:
-        new Date().toISOString(),
-      carriers: [
-        'Shiprocket',
-        'Delhivery',
-        'Blue Dart',
-        'Amazon Shipping',
-        'Velocity Express'
-      ]
-    });
-  }
-);
-
-app.get(
-  '/api/admin/dashboard/stats',
-  requireAdmin,
-  (req, res) => {
-    const orders =
-      completedOrders.map(
-        enrichOrder
-      );
-
     const shipments =
-      orders.flatMap(
-        (order) =>
-          order.fulfillments || []
-      );
+      getAllShipments();
 
-    const customers = new Set(
-      orders.map(
-        (order) =>
-          order.customer?.customerId
-      )
-    );
+    const customers =
+      getCustomers();
 
     const revenue =
-      orders.reduce(
+      completedOrders.reduce(
         (sum, order) =>
           sum +
           Number(
-            order.summary?.totalPaid || 0
+            order.summary?.totalPaid ||
+              0
           ),
         0
       );
 
-    const delivered =
-      shipments.filter(
-        (shipment) =>
-          shipment.status ===
+    const pendingOrders =
+      completedOrders.filter(
+        (order) =>
+          [
+            'CONFIRMED',
+            'PROCESSING',
+            'PACKED',
+            'READY_TO_DISPATCH'
+          ].includes(order.status)
+      ).length;
+
+    const deliveredOrders =
+      completedOrders.filter(
+        (order) =>
+          order.status ===
           'DELIVERED'
       ).length;
 
-    const inTransit =
+    const inTransitShipments =
       shipments.filter(
         (shipment) =>
           [
@@ -1063,91 +851,92 @@ app.get(
           )
       ).length;
 
-    const pending =
+    const shipmentExceptions =
       shipments.filter(
         (shipment) =>
+          shipment.exception ||
           [
-            'READY_TO_SHIP',
-            'CONFIRMED'
+            'CANCELLED',
+            'RETURNED'
           ].includes(
             shipment.status
           )
       ).length;
 
-    const totalUnits =
-      inventory.reduce(
-        (sum, product) =>
-          sum +
-          Number(product.stock || 0),
-        0
-      );
-
-    const lowStock =
+    const lowStockProducts =
       inventory.filter(
         (product) =>
-          Number(product.stock || 0) <= 10
+          product.stock <=
+          product.lowStockThreshold
+      );
+
+    const warehouseSummary =
+      warehouses.map(
+        (warehouse) => {
+          const warehouseShipments =
+            shipments.filter(
+              (shipment) =>
+                shipment.pickupWarehouse ===
+                warehouse.name
+            );
+
+          return {
+            ...warehouse,
+            activeShipments:
+              warehouseShipments.filter(
+                (shipment) =>
+                  shipment.status !==
+                  'DELIVERED'
+              ).length,
+            pendingOrders:
+              warehouseShipments.filter(
+                (shipment) =>
+                  [
+                    'CONFIRMED',
+                    'PROCESSING',
+                    'PACKED',
+                    'READY_TO_DISPATCH'
+                  ].includes(
+                    shipment.status
+                  )
+              ).length,
+            stockUnits:
+              inventory
+                .filter(
+                  (product) =>
+                    product.warehouseCity ===
+                    warehouse.name
+                )
+                .reduce(
+                  (sum, product) =>
+                    sum +
+                    product.stock,
+                  0
+                )
+          };
+        }
       );
 
     res.json({
-      orders: {
-        total: orders.length,
-        confirmed: orders.filter(
-          (order) =>
-            order.status ===
-            'CONFIRMED'
-        ).length,
-        shipped: orders.filter(
-          (order) =>
-            [
-              'SHIPPED',
-              'IN_TRANSIT',
-              'OUT_FOR_DELIVERY'
-            ].includes(
-              order.status
-            )
-        ).length,
-        delivered: orders.filter(
-          (order) =>
-            order.status ===
-            'DELIVERED'
-        ).length
-      },
-      customers: {
-        total: customers.size
-      },
-      revenue: {
-        total: revenue,
-        averageOrderValue:
-          orders.length
-            ? Math.round(
-                revenue /
-                  orders.length
-              )
-            : 0
-      },
-      shipments: {
-        total: shipments.length,
-        delivered,
-        inTransit,
-        pending
-      },
-      inventory: {
-        totalProducts:
-          inventory.length,
-        totalUnits,
-        lowStock:
-          lowStock.length
-      },
-      franchise: {
-        total: franchiseLeads.length,
-        newLeads:
-          franchiseLeads.filter(
-            (lead) =>
-              lead.status === 'NEW'
-          ).length
-      },
-      generatedAt:
-        new Date().toISOString()
+      totalOrders:
+        completedOrders.length,
+      totalRevenue: revenue,
+      pendingOrders,
+      deliveredOrders,
+      totalCustomers:
+        customers.length,
+      totalShipments:
+        shipments.length,
+      inTransitShipments,
+      shipmentExceptions,
+      recentOrders:
+        completedOrders.slice(
+          0,
+          8
+        ),
+      lowStockProducts,
+      warehouses:
+        warehouseSummary
     });
   }
 );
@@ -1156,40 +945,29 @@ app.get(
   '/api/admin/orders',
   requireAdmin,
   (req, res) => {
+    let result = [
+      ...completedOrders
+    ];
+
     const {
       search = '',
       status = 'ALL',
       paymentStatus = 'ALL',
       warehouse = 'ALL',
+      carrier = 'ALL',
+      dateFrom = '',
+      dateTo = '',
       sort = 'newest'
     } = req.query;
-
-    const page = Math.max(
-      1,
-      Number(req.query.page || 1)
-    );
-
-    const limit = Math.min(
-      50,
-      Math.max(
-        1,
-        Number(req.query.limit || 10)
-      )
-    );
 
     const query =
       String(search)
         .trim()
         .toLowerCase();
 
-    let orders =
-      completedOrders
-        .map(enrichOrder)
-        .filter((order) => {
-          if (!query) {
-            return true;
-          }
-
+    if (query) {
+      result = result.filter(
+        (order) => {
           const searchable = [
             order.orderId,
             order.invoiceNumber,
@@ -1198,17 +976,15 @@ app.get(
             order.customer?.email,
             order.customer?.city,
             order.customer?.pincode,
-            ...(order.fulfillments || []).map(
-              (shipment) =>
-                shipment.awb
-            ),
-            ...(order.fulfillments || []).map(
-              (shipment) =>
-                shipment.item
-            ),
-            ...(order.fulfillments || []).map(
-              (shipment) =>
-                shipment.brand
+            ...(order.fulfillments ||
+              []).flatMap(
+              (shipment) => [
+                shipment.shipmentId,
+                shipment.awb,
+                shipment.brand,
+                shipment.item,
+                shipment.courier
+              ]
             )
           ]
             .filter(Boolean)
@@ -1218,134 +994,172 @@ app.get(
           return searchable.includes(
             query
           );
-        })
-        .filter((order) => {
-          if (status === 'ALL') {
-            return true;
-          }
-
-          return (
-            order.status ===
-            status
-          );
-        })
-        .filter((order) => {
-          if (
-            paymentStatus ===
-            'ALL'
-          ) {
-            return true;
-          }
-
-          return (
-            order.paymentStatus ===
-            paymentStatus
-          );
-        })
-        .filter((order) => {
-          if (warehouse === 'ALL') {
-            return true;
-          }
-
-          return (
-            order.fulfillments || []
-          ).some(
-            (shipment) =>
-              String(
-                shipment.pickupWarehouse ||
-                  ''
-              )
-                .toLowerCase()
-                .includes(
-                  String(
-                    warehouse
-                  ).toLowerCase()
-                )
-          );
-        });
-
-    orders.sort((a, b) => {
-      if (sort === 'oldest') {
-        return (
-          new Date(a.placedAt) -
-          new Date(b.placedAt)
-        );
-      }
-
-      if (sort === 'highest') {
-        return (
-          Number(
-            b.summary?.totalPaid || 0
-          ) -
-          Number(
-            a.summary?.totalPaid || 0
-          )
-        );
-      }
-
-      if (sort === 'lowest') {
-        return (
-          Number(
-            a.summary?.totalPaid || 0
-          ) -
-          Number(
-            b.summary?.totalPaid || 0
-          )
-        );
-      }
-
-      return (
-        new Date(b.placedAt) -
-        new Date(a.placedAt)
+        }
       );
-    });
+    }
 
-    const total =
-      orders.length;
+    if (status !== 'ALL') {
+      result = result.filter(
+        (order) =>
+          order.status === status
+      );
+    }
 
-    const totalPages = Math.max(
+    if (
+      paymentStatus !==
+      'ALL'
+    ) {
+      result = result.filter(
+        (order) =>
+          order.paymentStatus ===
+          paymentStatus
+      );
+    }
+
+    if (warehouse !== 'ALL') {
+      result = result.filter(
+        (order) =>
+          (order.fulfillments ||
+            []).some(
+            (shipment) =>
+              shipment.pickupWarehouse ===
+              warehouse
+          )
+      );
+    }
+
+    if (carrier !== 'ALL') {
+      result = result.filter(
+        (order) =>
+          (order.fulfillments ||
+            []).some(
+            (shipment) =>
+              shipment.courier ===
+              carrier
+          )
+      );
+    }
+
+    if (dateFrom) {
+      const from =
+        new Date(dateFrom);
+
+      result = result.filter(
+        (order) =>
+          new Date(
+            order.placedAt
+          ) >= from
+      );
+    }
+
+    if (dateTo) {
+      const to =
+        new Date(dateTo);
+
+      to.setHours(
+        23,
+        59,
+        59,
+        999
+      );
+
+      result = result.filter(
+        (order) =>
+          new Date(
+            order.placedAt
+          ) <= to
+      );
+    }
+
+    result.sort(
+      (a, b) => {
+        if (
+          sort === 'oldest'
+        ) {
+          return (
+            new Date(a.placedAt) -
+            new Date(b.placedAt)
+          );
+        }
+
+        if (
+          sort === 'amount_high'
+        ) {
+          return (
+            Number(
+              b.summary?.totalPaid ||
+                0
+            ) -
+            Number(
+              a.summary?.totalPaid ||
+                0
+            )
+          );
+        }
+
+        if (
+          sort === 'amount_low'
+        ) {
+          return (
+            Number(
+              a.summary?.totalPaid ||
+                0
+            ) -
+            Number(
+              b.summary?.totalPaid ||
+                0
+            )
+          );
+        }
+
+        return (
+          new Date(b.placedAt) -
+          new Date(a.placedAt)
+        );
+      }
+    );
+
+    const page = Math.max(
       1,
-      Math.ceil(
-        total / limit
+      Number(req.query.page) ||
+        1
+    );
+
+    const limit = Math.min(
+      100,
+      Math.max(
+        1,
+        Number(req.query.limit) ||
+          20
       )
     );
 
-    const safePage = Math.min(
-      page,
-      totalPages
-    );
+    const total =
+      result.length;
+
+    const totalPages =
+      Math.max(
+        1,
+        Math.ceil(
+          total / limit
+        )
+      );
 
     const start =
-      (safePage - 1) *
-      limit;
+      (page - 1) * limit;
 
-    const paginatedOrders =
-      orders.slice(
+    const paginated =
+      result.slice(
         start,
         start + limit
       );
 
     res.json({
-      orders:
-        paginatedOrders,
-      pagination: {
-        page: safePage,
-        limit,
-        total,
-        totalPages,
-        hasNextPage:
-          safePage <
-          totalPages,
-        hasPreviousPage:
-          safePage > 1
-      },
-      filters: {
-        search,
-        status,
-        paymentStatus,
-        warehouse,
-        sort
-      }
+      orders: paginated,
+      page,
+      limit,
+      total,
+      totalPages
     });
   }
 );
@@ -1363,46 +1177,21 @@ app.get(
 
     if (!order) {
       return res.status(404).json({
-        message: 'Order not found'
+        error: 'Order not found.'
       });
     }
 
-    res.json(
-      enrichOrder(order)
-    );
+    res.json(order);
   }
 );
 
-app.post(
+app.patch(
   '/api/admin/orders/:orderId/status',
   requireAdmin,
   (req, res) => {
     const {
       status
     } = req.body;
-
-    const allowedStatuses = [
-      'CONFIRMED',
-      'PROCESSING',
-      'SHIPPED',
-      'IN_TRANSIT',
-      'OUT_FOR_DELIVERY',
-      'DELIVERED',
-      'CANCELLED',
-      'RETURN_REQUESTED',
-      'RETURNED'
-    ];
-
-    if (
-      !allowedStatuses.includes(
-        status
-      )
-    ) {
-      return res.status(400).json({
-        message:
-          'Invalid order status'
-      });
-    }
 
     const order =
       completedOrders.find(
@@ -1413,98 +1202,18 @@ app.post(
 
     if (!order) {
       return res.status(404).json({
-        message: 'Order not found'
+        error: 'Order not found.'
       });
     }
 
-    order.status = status;
-    order.updatedAt =
-      new Date().toISOString();
+    const nextStatus =
+      normalizeStatus(status);
+
+    order.status = nextStatus;
 
     res.json({
       success: true,
-      order:
-        enrichOrder(order)
-    });
-  }
-);
-
-app.get(
-  '/api/admin/customers/:customerId',
-  requireAdmin,
-  (req, res) => {
-    const orders =
-      completedOrders.map(
-        enrichOrder
-      );
-
-    const customerOrders =
-      orders.filter(
-        (order) =>
-          order.customer
-            ?.customerId ===
-          req.params.customerId
-      );
-
-    if (!customerOrders.length) {
-      return res.status(404).json({
-        message:
-          'Customer not found'
-      });
-    }
-
-    const customer =
-      customerOrders[0].customer;
-
-    const totalSpent =
-      customerOrders.reduce(
-        (sum, order) =>
-          sum +
-          Number(
-            order.summary?.totalPaid ||
-              0
-          ),
-        0
-      );
-
-    const totalItems =
-      customerOrders.reduce(
-        (sum, order) =>
-          sum +
-          (order.fulfillments || [])
-            .reduce(
-              (itemSum, shipment) =>
-                itemSum +
-                Number(
-                  shipment.qty || 0
-                ),
-              0
-            ),
-        0
-      );
-
-    res.json({
-      customer: {
-        ...customer,
-        totalOrders:
-          customerOrders.length,
-        totalSpent,
-        totalItems,
-        averageOrderValue:
-          Math.round(
-            totalSpent /
-              customerOrders.length
-          ),
-        firstOrderAt:
-          customerOrders[
-            customerOrders.length - 1
-          ].placedAt,
-        lastOrderAt:
-          customerOrders[0]
-            .placedAt
-      },
-      orders:
-        customerOrders
+      order
     });
   }
 );
@@ -1513,37 +1222,9 @@ app.get(
   '/api/admin/shipments',
   requireAdmin,
   (req, res) => {
-    const shipments = [];
-
-    completedOrders
-      .map(enrichOrder)
-      .forEach((order) => {
-        (
-          order.fulfillments || []
-        ).forEach(
-          (shipment) => {
-            shipments.push({
-              ...shipment,
-              orderId:
-                order.orderId,
-              invoiceNumber:
-                order.invoiceNumber,
-              customer:
-                order.customer,
-              paymentStatus:
-                order.paymentStatus,
-              totalPaid:
-                order.summary
-                  ?.totalPaid || 0
-            });
-          }
-        );
-      });
-
     res.json({
-      shipments,
-      total:
-        shipments.length
+      shipments:
+        getAllShipments()
     });
   }
 );
@@ -1552,203 +1233,33 @@ app.get(
   '/api/admin/shipments/:shipmentId',
   requireAdmin,
   (req, res) => {
-    for (
-      const order of completedOrders
-    ) {
-      const shipment =
-        (
-          order.fulfillments || []
-        ).find(
-          (item) =>
-            item.shipmentId ===
-            req.params.shipmentId
-        );
+    const shipment =
+      getAllShipments().find(
+        (item) =>
+          item.shipmentId ===
+          req.params.shipmentId
+      );
 
-      if (shipment) {
-        return res.json({
-          ...shipment,
-          orderId:
-            order.orderId,
-          invoiceNumber:
-            order.invoiceNumber,
-          customer:
-            order.customer,
-          paymentStatus:
-            order.paymentStatus,
-          totalPaid:
-            order.summary
-              ?.totalPaid || 0
-        });
-      }
-    }
-
-    res.status(404).json({
-      message:
-        'Shipment not found'
-    });
-  }
-);
-
-app.get(
-  '/api/track/:shipmentId',
-  (req, res) => {
-    for (
-      const order of completedOrders
-    ) {
-      const shipment =
-        (
-          order.fulfillments || []
-        ).find(
-          (item) =>
-            item.shipmentId ===
-            req.params.shipmentId
-        );
-
-      if (!shipment) {
-        continue;
-      }
-
-      const status =
-        shipment.status;
-
-      const statusIndex = {
-        READY_TO_SHIP: 0,
-        SHIPPED: 1,
-        IN_TRANSIT: 2,
-        OUT_FOR_DELIVERY: 3,
-        DELIVERED: 4
-      };
-
-      const current =
-        statusIndex[status] ?? 0;
-
-      const existingHistory =
-        shipment.history || [];
-
-      const timeline = [
-        {
-          status:
-            'ORDER_CONFIRMED',
-          title:
-            'Order Confirmed',
-          completed:
-            current >= 0,
-          timestamp:
-            existingHistory.find(
-              (item) =>
-                item.status ===
-                'ORDER_CONFIRMED'
-            )?.timestamp ||
-            order.placedAt
-        },
-        {
-          status: 'SHIPPED',
-          title:
-            'Packed & Dispatched',
-          completed:
-            current >= 1,
-          timestamp:
-            existingHistory.find(
-              (item) =>
-                item.status ===
-                'SHIPPED'
-            )?.timestamp ||
-            null
-        },
-        {
-          status: 'IN_TRANSIT',
-          title: 'In Transit',
-          completed:
-            current >= 2,
-          timestamp:
-            existingHistory.find(
-              (item) =>
-                item.status ===
-                'IN_TRANSIT'
-            )?.timestamp ||
-            null
-        },
-        {
-          status:
-            'OUT_FOR_DELIVERY',
-          title:
-            'Out for Delivery',
-          completed:
-            current >= 3,
-          timestamp:
-            existingHistory.find(
-              (item) =>
-                item.status ===
-                'OUT_FOR_DELIVERY'
-            )?.timestamp ||
-            null
-        },
-        {
-          status: 'DELIVERED',
-          title: 'Delivered',
-          completed:
-            current >= 4,
-          timestamp:
-            existingHistory.find(
-              (item) =>
-                item.status ===
-                'DELIVERED'
-            )?.timestamp ||
-            null
-        }
-      ];
-
-      return res.json({
-        shipment,
-        orderId:
-          order.orderId,
-        customer:
-          order.customer,
-        timeline,
-        currentStatus:
-          status,
-        carrier:
-          shipment.carrier ||
-          shipment.courier,
-        awb: shipment.awb
+    if (!shipment) {
+      return res.status(404).json({
+        error:
+          'Shipment not found.'
       });
     }
 
-    res.status(404).json({
-      message:
-        'Shipment not found'
-    });
+    res.json(shipment);
   }
 );
 
-app.post(
-  '/api/admin/shipment/status',
+app.patch(
+  '/api/admin/shipments/:shipmentId/status',
   requireAdmin,
   (req, res) => {
     const {
       orderId,
-      shipmentId,
-      newStatus
+      newStatus,
+      location
     } = req.body;
-
-    const allowedStatuses = [
-      'READY_TO_SHIP',
-      'SHIPPED',
-      'IN_TRANSIT',
-      'OUT_FOR_DELIVERY',
-      'DELIVERED'
-    ];
-
-    if (
-      !allowedStatuses.includes(
-        newStatus
-      )
-    ) {
-      return res.status(400).json({
-        message:
-          'Invalid shipment status'
-      });
-    }
 
     const order =
       completedOrders.find(
@@ -1759,80 +1270,251 @@ app.post(
 
     if (!order) {
       return res.status(404).json({
-        message: 'Order not found'
+        error: 'Order not found.'
       });
     }
 
     const shipment =
-      (
-        order.fulfillments || []
-      ).find(
+      order.fulfillments?.find(
         (item) =>
           item.shipmentId ===
-          shipmentId
+          req.params.shipmentId
       );
 
     if (!shipment) {
       return res.status(404).json({
-        message:
-          'Shipment not found'
+        error:
+          'Shipment not found.'
       });
     }
 
-    const now =
-      new Date().toISOString();
+    const status =
+      normalizeStatus(newStatus);
 
-    shipment.status =
-      newStatus;
+    shipment.status = status;
 
-    shipment.updatedAt = now;
+    addTrackingEvent(
+      shipment,
+      status,
+      location ||
+        shipment.pickupWarehouse ||
+        'India'
+    );
 
-    if (!shipment.history) {
-      shipment.history = [];
-    }
-
-    const historyTitles = {
-      READY_TO_SHIP:
-        'Ready to Ship',
-      SHIPPED:
-        'Packed & Dispatched',
-      IN_TRANSIT:
-        'In Transit',
-      OUT_FOR_DELIVERY:
-        'Out for Delivery',
-      DELIVERED:
-        'Delivered'
-    };
-
-    const alreadyExists =
-      shipment.history.some(
-        (item) =>
-          item.status ===
-          newStatus
+    const statuses =
+      order.fulfillments.map(
+        (item) => item.status
       );
 
-    if (!alreadyExists) {
-      shipment.history.push({
-        status:
-          newStatus,
-        title:
-          historyTitles[
-            newStatus
-          ],
-        timestamp: now
-      });
+    if (
+      statuses.every(
+        (item) =>
+          item === 'DELIVERED'
+      )
+    ) {
+      order.status =
+        'DELIVERED';
+    } else if (
+      statuses.some(
+        (item) =>
+          item ===
+            'OUT_FOR_DELIVERY' ||
+          item === 'IN_TRANSIT' ||
+          item === 'SHIPPED'
+      )
+    ) {
+      order.status =
+        'IN_TRANSIT';
+    } else if (
+      statuses.some(
+        (item) =>
+          item ===
+            'READY_TO_DISPATCH'
+      )
+    ) {
+      order.status =
+        'READY_TO_DISPATCH';
+    } else if (
+      statuses.some(
+        (item) =>
+          item === 'PACKED'
+      )
+    ) {
+      order.status =
+        'PACKED';
+    } else if (
+      statuses.some(
+        (item) =>
+          item === 'PROCESSING'
+      )
+    ) {
+      order.status =
+        'PROCESSING';
     }
-
-    order.status =
-      getOrderStatus(order);
-
-    order.updatedAt = now;
 
     res.json({
       success: true,
-      order:
-        enrichOrder(order),
+      shipment,
+      order
+    });
+  }
+);
+
+app.post(
+  '/api/admin/shipments/:shipmentId/exception',
+  requireAdmin,
+  (req, res) => {
+    const {
+      orderId,
+      reason,
+      notes
+    } = req.body;
+
+    const order =
+      completedOrders.find(
+        (item) =>
+          item.orderId ===
+          orderId
+      );
+
+    if (!order) {
+      return res.status(404).json({
+        error: 'Order not found.'
+      });
+    }
+
+    const shipment =
+      order.fulfillments?.find(
+        (item) =>
+          item.shipmentId ===
+          req.params.shipmentId
+      );
+
+    if (!shipment) {
+      return res.status(404).json({
+        error:
+          'Shipment not found.'
+      });
+    }
+
+    shipment.exception = reason;
+
+    shipment.exceptionDetails = {
+      reason,
+      notes: notes || '',
+      createdAt:
+        new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
       shipment
+    });
+  }
+);
+
+app.get(
+  '/api/admin/shipments/:shipmentId/tracking',
+  requireAdmin,
+  (req, res) => {
+    const shipment =
+      getAllShipments().find(
+        (item) =>
+          item.shipmentId ===
+          req.params.shipmentId
+      );
+
+    if (!shipment) {
+      return res.status(404).json({
+        error:
+          'Shipment not found.'
+      });
+    }
+
+    res.json({
+      shipmentId:
+        shipment.shipmentId,
+      awb: shipment.awb,
+      courier:
+        shipment.courier,
+      status:
+        shipment.status,
+      trackingEvents:
+        shipment.trackingEvents ||
+        []
+    });
+  }
+);
+
+app.get(
+  '/api/admin/customers',
+  requireAdmin,
+  (req, res) => {
+    let customers =
+      getCustomers();
+
+    const search =
+      String(
+        req.query.search || ''
+      )
+        .trim()
+        .toLowerCase();
+
+    if (search) {
+      customers =
+        customers.filter(
+          (customer) =>
+            [
+              customer.customerId,
+              customer.name,
+              customer.phone,
+              customer.email,
+              customer.city,
+              customer.pincode
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase()
+              .includes(search)
+        );
+    }
+
+    res.json({
+      customers,
+      total: customers.length
+    });
+  }
+);
+
+app.get(
+  '/api/admin/customers/:customerId',
+  requireAdmin,
+  (req, res) => {
+    const customer =
+      getCustomers().find(
+        (item) =>
+          item.customerId ===
+          req.params.customerId
+      );
+
+    if (!customer) {
+      return res.status(404).json({
+        error:
+          'Customer not found.'
+      });
+    }
+
+    const orders =
+      completedOrders.filter(
+        (order) =>
+          order.customer
+            ?.customerId ===
+          customer.customerId
+      );
+
+    res.json({
+      customer,
+      orders
     });
   }
 );
@@ -1842,31 +1524,38 @@ app.get(
   requireAdmin,
   (req, res) => {
     res.json({
-      products:
-        inventory,
-      totalProducts:
-        inventory.length,
-      totalUnits:
-        inventory.reduce(
-          (sum, product) =>
-            sum +
-            Number(
-              product.stock || 0
-            ),
-          0
+      inventory,
+      lowStock:
+        inventory.filter(
+          (product) =>
+            product.stock <=
+            product.lowStockThreshold
         )
     });
   }
 );
 
-app.post(
-  '/api/admin/inventory/update',
+app.patch(
+  '/api/admin/inventory/:skuId',
   requireAdmin,
   (req, res) => {
     const {
-      skuId,
       newStock
     } = req.body;
+
+    const product =
+      inventory.find(
+        (item) =>
+          item.id ===
+          req.params.skuId
+      );
+
+    if (!product) {
+      return res.status(404).json({
+        error:
+          'SKU not found.'
+      });
+    }
 
     const stock =
       Number(newStock);
@@ -1876,21 +1565,8 @@ app.post(
       stock < 0
     ) {
       return res.status(400).json({
-        message:
-          'Invalid stock quantity'
-      });
-    }
-
-    const product =
-      inventory.find(
-        (item) =>
-          item.id === skuId
-      );
-
-    if (!product) {
-      return res.status(404).json({
-        message:
-          'Product not found'
+        error:
+          'Invalid stock quantity.'
       });
     }
 
@@ -1905,350 +1581,132 @@ app.post(
 );
 
 app.get(
-  '/api/franchise/leads',
+  '/api/admin/shiprocket/status',
+  requireAdmin,
   (req, res) => {
-    res.json(franchiseLeads);
+    res.json({
+      configured:
+        Boolean(
+          SHIPROCKET_EMAIL &&
+            SHIPROCKET_PASSWORD
+        ),
+      provider:
+        'Shiprocket',
+      mode:
+        SHIPROCKET_EMAIL &&
+        SHIPROCKET_PASSWORD
+          ? 'CONFIGURED'
+          : 'NOT_CONFIGURED'
+    });
   }
 );
 
 app.post(
-  '/api/franchise/leads',
-  (req, res) => {
-    const {
-      name,
-      phone,
-      email,
-      city,
-      preferredModel,
-      investmentRange
-    } = req.body;
-
-    if (
-      !name ||
-      !phone ||
-      !email ||
-      !city
-    ) {
-      return res.status(400).json({
-        message:
-          'Name, phone, email and city are required.'
-      });
-    }
-
-    const lead = {
-      id: `LEAD-${Math.floor(
-        1000 +
-          Math.random() * 9000
-      )}`,
-      name,
-      phone,
-      email,
-      city,
-      preferredModel:
-        preferredModel ||
-        'FOFO',
-      investmentRange:
-        investmentRange ||
-        'Not specified',
-      status: 'NEW',
-      createdAt:
-        new Date().toISOString()
-    };
-
-    franchiseLeads.unshift(lead);
-
-    res.status(201).json(
-      lead
-    );
-  }
-);
-
-app.put(
-  '/api/franchise/leads/:leadId',
+  '/api/admin/shiprocket/create-order',
   requireAdmin,
   (req, res) => {
-    const lead =
-      franchiseLeads.find(
+    const {
+      orderId
+    } = req.body;
+
+    const order =
+      completedOrders.find(
         (item) =>
-          item.id ===
-          req.params.leadId
+          item.orderId ===
+          orderId
       );
 
-    if (!lead) {
+    if (!order) {
       return res.status(404).json({
-        message:
-          'Franchise lead not found'
+        error:
+          'Order not found.'
       });
     }
-
-    Object.assign(
-      lead,
-      req.body,
-      {
-        id: lead.id
-      }
-    );
 
     res.json({
       success: true,
-      lead
+      mode: SHIPROCKET_EMAIL &&
+        SHIPROCKET_PASSWORD
+        ? 'LIVE_READY'
+        : 'MOCK',
+      message:
+        'Shiprocket shipment creation payload prepared.',
+      orderId,
+      shipments:
+        order.fulfillments
     });
   }
 );
 
 app.get(
-  '/api/admin/franchise/leads',
+  '/api/admin/analytics',
   requireAdmin,
   (req, res) => {
-    res.json({
-      leads:
-        franchiseLeads,
-      total:
-        franchiseLeads.length
-    });
-  }
-);
+    const shipments =
+      getAllShipments();
 
-app.get(
-  '/api/admin/customers',
-  requireAdmin,
-  (req, res) => {
-    const customerMap =
-      new Map();
-
-    completedOrders
-      .map(enrichOrder)
-      .forEach((order) => {
-        const customer =
-          order.customer;
-
-        const id =
-          customer.customerId;
-
-        if (!customerMap.has(id)) {
-          customerMap.set(id, {
-            ...customer,
-            totalOrders: 0,
-            totalSpent: 0,
-            totalItems: 0
-          });
-        }
-
-        const existing =
-          customerMap.get(id);
-
-        existing.totalOrders += 1;
-
-        existing.totalSpent +=
+    const revenue =
+      completedOrders.reduce(
+        (sum, order) =>
+          sum +
           Number(
-            order.summary
-              ?.totalPaid || 0
-          );
-
-        existing.totalItems +=
-          (
-            order.fulfillments ||
-            []
-          ).reduce(
-            (sum, shipment) =>
-              sum +
-              Number(
-                shipment.qty || 0
-              ),
-            0
-          );
-      });
-
-    const customers =
-      Array.from(
-        customerMap.values()
-      ).map((customer) => ({
-        ...customer,
-        averageOrderValue:
-          customer.totalOrders
-            ? Math.round(
-                customer.totalSpent /
-                  customer.totalOrders
-              )
-            : 0
-      }));
-
-    res.json({
-      customers,
-      total:
-        customers.length
-    });
-  }
-);
-
-app.get(
-  '/api/admin/recent-activity',
-  requireAdmin,
-  (req, res) => {
-    const activity = [];
-
-    completedOrders
-      .slice(0, 10)
-      .forEach((order) => {
-        activity.push({
-          id:
-            `ORDER-${order.orderId}`,
-          type: 'ORDER',
-          title:
-            `Order ${order.orderId} placed`,
-          description:
-            `${order.customer?.name || 'Customer'} placed an order worth ₹${order.summary?.totalPaid || 0}`,
-          timestamp:
-            order.placedAt
-        });
-
-        (
-          order.fulfillments || []
-        ).forEach((shipment) => {
-          activity.push({
-            id:
-              `SHIPMENT-${shipment.shipmentId}`,
-            type: 'SHIPMENT',
-            title:
-              `Shipment ${shipment.shipmentId}`,
-            description:
-              `${shipment.item} • ${shipment.status.replace(/_/g, ' ')}`,
-            timestamp:
-              shipment.updatedAt ||
-              order.updatedAt ||
-              order.placedAt
-          });
-        });
-      });
-
-    activity.sort(
-      (a, b) =>
-        new Date(b.timestamp) -
-        new Date(a.timestamp)
-    );
-
-    res.json(
-      activity.slice(0, 20)
-    );
-  }
-);
-
-app.get(
-  '/api/admin/carriers',
-  requireAdmin,
-  (req, res) => {
-    res.json({
-      carriers: [
-        {
-          name: 'Shiprocket',
-          status: 'CONNECTED',
-          type: 'Aggregator',
-          coverage: 'Pan-India'
-        },
-        {
-          name: 'Delhivery',
-          status: 'ACTIVE',
-          type: 'Courier',
-          coverage: 'Pan-India'
-        },
-        {
-          name: 'Blue Dart',
-          status: 'ACTIVE',
-          type: 'Courier',
-          coverage: 'Pan-India'
-        },
-        {
-          name: 'Amazon Shipping',
-          status: 'ACTIVE',
-          type: 'Courier',
-          coverage: 'Pan-India'
-        },
-        {
-          name: 'Velocity Express',
-          status: 'ACTIVE',
-          type: 'Courier',
-          coverage: 'Pan-India'
-        }
-      ]
-    });
-  }
-);
-
-app.get(
-  '/api/admin/warehouses',
-  requireAdmin,
-  (req, res) => {
-    const warehouses = [
-      {
-        city: 'Mumbai',
-        name:
-          'Mumbai Bhiwandi Central Hub',
-        status: 'OPERATIONAL'
-      },
-      {
-        city: 'Delhi',
-        name:
-          'Delhi NCR Air Express Depot',
-        status: 'OPERATIONAL'
-      },
-      {
-        city: 'Jaipur',
-        name:
-          'Jaipur Heritage Depot',
-        status: 'OPERATIONAL'
-      },
-      {
-        city: 'Bengaluru',
-        name:
-          'Bengaluru Whitefield Hub',
-        status: 'OPERATIONAL'
-      }
-    ];
-
-    const result =
-      warehouses.map(
-        (warehouse) => {
-          const products =
-            inventory.filter(
-              (product) =>
-                product.warehouseCity
-                  .toLowerCase()
-                  .includes(
-                    warehouse.city.toLowerCase()
-                  )
-            );
-
-          return {
-            ...warehouse,
-            products:
-              products.length,
-            units:
-              products.reduce(
-                (sum, product) =>
-                  sum +
-                  Number(
-                    product.stock ||
-                      0
-                  ),
-                0
-              )
-          };
-        }
+            order.summary?.totalPaid ||
+              0
+          ),
+        0
       );
 
-    res.json(result);
+    const delivered =
+      completedOrders.filter(
+        (order) =>
+          order.status ===
+          'DELIVERED'
+      ).length;
+
+    const returns =
+      completedOrders.filter(
+        (order) =>
+          order.returnRequested
+      ).length;
+
+    const averageOrderValue =
+      completedOrders.length
+        ? Math.round(
+            revenue /
+              completedOrders.length
+          )
+        : 0;
+
+    res.json({
+      revenue,
+      orders:
+        completedOrders.length,
+      shipments:
+        shipments.length,
+      delivered,
+      returns,
+      averageOrderValue
+    });
   }
 );
 
-app.get(
-  '/api/health',
+app.use(
   (req, res) => {
-    res.json({
-      status: 'OK',
-      service:
-        'D2C Mall Backend',
-      timestamp:
-        new Date().toISOString()
+    res.status(404).json({
+      error: 'API endpoint not found.',
+      path: req.path
+    });
+  }
+);
+
+app.use(
+  (err, req, res, next) => {
+    console.error(err);
+
+    res.status(500).json({
+      error:
+        err?.message ||
+        'Internal server error.'
     });
   }
 );

@@ -1,29 +1,52 @@
 const API_BASE =
   import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD
-    ? '/api'
-    : 'http://localhost:5000/api');
+  'http://localhost:5000/api';
 
-async function request(endpoint, options = {}) {
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    },
-    ...options
+async function request(
+  endpoint,
+  options = {}
+) {
+  const {
+    method = 'GET',
+    body,
+    headers = {},
+    auth = false
+  } = options;
+
+  const finalHeaders = {
+    ...headers
   };
 
-  let response;
-
-  try {
-    response = await fetch(`${API_BASE}${endpoint}`, config);
-  } catch (error) {
-    throw new Error(
-      'Unable to connect to the server. Please check your connection.'
-    );
+  if (body !== undefined) {
+    finalHeaders['Content-Type'] =
+      'application/json';
   }
 
-  let data = {};
+  if (auth) {
+    const token =
+      localStorage.getItem(
+        'd2c_admin_token'
+      );
+
+    if (token) {
+      finalHeaders.Authorization =
+        `Bearer ${token}`;
+    }
+  }
+
+  const response = await fetch(
+    `${API_BASE}${endpoint}`,
+    {
+      method,
+      headers: finalHeaders,
+      body:
+        body !== undefined
+          ? JSON.stringify(body)
+          : undefined
+    }
+  );
+
+  let data = null;
 
   try {
     data = await response.json();
@@ -33,9 +56,9 @@ async function request(endpoint, options = {}) {
 
   if (!response.ok) {
     throw new Error(
-      data.message ||
-      data.error ||
-      `Request failed with status ${response.status}`
+      data?.error ||
+        data?.message ||
+        `Request failed (${response.status})`
     );
   }
 
@@ -43,189 +66,381 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  async getProducts() {
+  /* =========================
+     HEALTH
+  ========================= */
+
+  health() {
+    return request('/health');
+  },
+
+  /* =========================
+     CUSTOMER / CATALOG
+  ========================= */
+
+  getProducts() {
     return request('/products');
   },
 
-  async checkDelivery(pincode) {
-    return request('/delivery/check', {
-      method: 'POST',
-      body: JSON.stringify({ pincode })
-    });
+  getWarehouses() {
+    return request('/warehouses');
   },
 
-  async validateCoupon(code, cartTotal) {
-    return request('/coupons/validate', {
-      method: 'POST',
-      body: JSON.stringify({
-        code,
-        cartTotal
-      })
-    });
+  checkDelivery(pincode) {
+    return request(
+      '/delivery/check',
+      {
+        method: 'POST',
+        body: { pincode }
+      }
+    );
   },
 
-  async initiatePayment(payload) {
-    return request('/checkout/order', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+  validateCoupon(
+    code,
+    cartTotal
+  ) {
+    return request(
+      '/coupons/validate',
+      {
+        method: 'POST',
+        body: {
+          code,
+          cartTotal
+        }
+      }
+    );
   },
 
-  async verifyPayment(payload) {
-    return request('/checkout/verify', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+  /* =========================
+     CHECKOUT
+  ========================= */
+
+  initiatePayment(data) {
+    return request(
+      '/checkout/order',
+      {
+        method: 'POST',
+        body: data
+      }
+    );
   },
 
-  async getCustomerOrders() {
+  createOrder(data) {
+    return request(
+      '/checkout/order',
+      {
+        method: 'POST',
+        body: data
+      }
+    );
+  },
+
+  verifyPayment(data) {
+    return request(
+      '/checkout/order',
+      {
+        method: 'POST',
+        body: data
+      }
+    );
+  },
+
+  /* =========================
+     CUSTOMER ORDERS
+  ========================= */
+
+  getOrders() {
     return request('/orders');
   },
 
-  async requestReturn(payload) {
-    return request('/orders/return', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+  getOrder(orderId) {
+    return request(
+      `/orders/${encodeURIComponent(
+        orderId
+      )}`
+    );
   },
 
-  async updateStock(skuId, newStock) {
-    return request('/admin/inventory/update', {
-      method: 'POST',
-      body: JSON.stringify({
-        skuId,
-        newStock
-      })
-    });
+  getOrderTracking(orderId) {
+    return request(
+      `/orders/${encodeURIComponent(
+        orderId
+      )}/tracking`
+    );
   },
 
-  async updateShipmentStatus(
-    orderId,
-    shipmentId,
-    newStatus
-  ) {
-    return request('/admin/shipment/status', {
-      method: 'POST',
-      body: JSON.stringify({
-        orderId,
-        shipmentId,
-        newStatus
-      })
-    });
-  },
-
-  async getAdminDashboardStats() {
-    return request('/admin/dashboard/stats');
-  },
-
-  async getAdminOrders(params = {}) {
-    const query = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        value !== ''
-      ) {
-        query.set(key, value);
+  requestReturn(data) {
+    return request(
+      '/orders/return',
+      {
+        method: 'POST',
+        body: data
       }
-    });
-
-    const queryString = query.toString();
-
-    return request(
-      `/admin/orders${queryString ? `?${queryString}` : ''}`
     );
   },
 
-  async getAdminOrder(orderId) {
+  /* =========================
+     ADMIN AUTH
+  ========================= */
+
+  adminLogin(
+    username,
+    password
+  ) {
     return request(
-      `/admin/orders/${encodeURIComponent(orderId)}`
+      '/admin/login',
+      {
+        method: 'POST',
+        body: {
+          username,
+          password
+        }
+      }
     );
   },
 
-  async updateAdminOrderStatus(orderId, status) {
-    return request('/admin/order/status', {
-      method: 'POST',
-      body: JSON.stringify({
-        orderId,
-        status
-      })
-    });
+  adminLogout() {
+    return request(
+      '/admin/logout',
+      {
+        method: 'POST',
+        auth: true
+      }
+    );
   },
 
-  async getAdminWarehouses() {
-    return request('/admin/warehouses');
+  /* =========================
+     ADMIN DASHBOARD
+  ========================= */
+
+  getAdminDashboard() {
+    return request(
+      '/admin/dashboard',
+      {
+        auth: true
+      }
+    );
   },
 
-  async getShipmentTracking(orderId, shipmentId) {
+  getAdminAnalytics() {
+    return request(
+      '/admin/analytics',
+      {
+        auth: true
+      }
+    );
+  },
+
+  /* =========================
+     ADMIN ORDERS
+  ========================= */
+
+  getAdminOrders(
+    queryString = ''
+  ) {
+    const query = queryString
+      ? `?${queryString}`
+      : '';
+
+    return request(
+      `/admin/orders${query}`,
+      {
+        auth: true
+      }
+    );
+  },
+
+  getAdminOrder(orderId) {
+    return request(
+      `/admin/orders/${encodeURIComponent(
+        orderId
+      )}`,
+      {
+        auth: true
+      }
+    );
+  },
+
+  updateOrderStatus(
+    orderId,
+    status
+  ) {
+    return request(
+      `/admin/orders/${encodeURIComponent(
+        orderId
+      )}/status`,
+      {
+        method: 'PATCH',
+        auth: true,
+        body: {
+          status
+        }
+      }
+    );
+  },
+
+  /* =========================
+     ADMIN SHIPMENTS
+  ========================= */
+
+  getAdminShipments() {
+    return request(
+      '/admin/shipments',
+      {
+        auth: true
+      }
+    );
+  },
+
+  getAdminShipment(
+    shipmentId
+  ) {
     return request(
       `/admin/shipments/${encodeURIComponent(
         shipmentId
-      )}/tracking?orderId=${encodeURIComponent(orderId)}`
+      )}`,
+      {
+        auth: true
+      }
     );
   },
 
-  async refreshShipmentTracking(orderId, shipmentId) {
-    return request('/admin/shipments/tracking/refresh', {
-      method: 'POST',
-      body: JSON.stringify({
-        orderId,
+  updateShipmentStatus(
+    shipmentId,
+    data
+  ) {
+    return request(
+      `/admin/shipments/${encodeURIComponent(
         shipmentId
-      })
-    });
-  },
-
-  async getCustomerDetails(customerId) {
-    return request(
-      `/admin/customers/${encodeURIComponent(customerId)}`
-    );
-  },
-
-  async getAdminCustomers(params = {}) {
-    const query = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        value !== ''
-      ) {
-        query.set(key, value);
+      )}/status`,
+      {
+        method: 'PATCH',
+        auth: true,
+        body: data
       }
-    });
-
-    const queryString = query.toString();
-
-    return request(
-      `/admin/customers${queryString ? `?${queryString}` : ''}`
     );
   },
 
-  async getAdminInventory(params = {}) {
-    const query = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        value !== ''
-      ) {
-        query.set(key, value);
+  getShipmentTracking(
+    shipmentId
+  ) {
+    return request(
+      `/admin/shipments/${encodeURIComponent(
+        shipmentId
+      )}/tracking`,
+      {
+        auth: true
       }
-    });
-
-    const queryString = query.toString();
-
-    return request(
-      `/admin/inventory${queryString ? `?${queryString}` : ''}`
     );
   },
 
-  async adminLogin(credentials) {
-    return request('/admin/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials)
-    });
+  createShipmentException(
+    shipmentId,
+    data
+  ) {
+    return request(
+      `/admin/shipments/${encodeURIComponent(
+        shipmentId
+      )}/exception`,
+      {
+        method: 'POST',
+        auth: true,
+        body: data
+      }
+    );
+  },
+
+  /* =========================
+     CUSTOMERS
+  ========================= */
+
+  getAdminCustomers(
+    search = ''
+  ) {
+    const query = search
+      ? `?search=${encodeURIComponent(
+          search
+        )}`
+      : '';
+
+    return request(
+      `/admin/customers${query}`,
+      {
+        auth: true
+      }
+    );
+  },
+
+  getAdminCustomer(
+    customerId
+  ) {
+    return request(
+      `/admin/customers/${encodeURIComponent(
+        customerId
+      )}`,
+      {
+        auth: true
+      }
+    );
+  },
+
+  /* =========================
+     INVENTORY
+  ========================= */
+
+  getAdminInventory() {
+    return request(
+      '/admin/inventory',
+      {
+        auth: true
+      }
+    );
+  },
+
+  updateInventory(
+    skuId,
+    newStock
+  ) {
+    return request(
+      `/admin/inventory/${encodeURIComponent(
+        skuId
+      )}`,
+      {
+        method: 'PATCH',
+        auth: true,
+        body: {
+          newStock
+        }
+      }
+    );
+  },
+
+  /* =========================
+     SHIPROCKET
+  ========================= */
+
+  getShiprocketStatus() {
+    return request(
+      '/admin/shiprocket/status',
+      {
+        auth: true
+      }
+    );
+  },
+
+  createShiprocketOrder(
+    orderId
+  ) {
+    return request(
+      '/admin/shiprocket/create-order',
+      {
+        method: 'POST',
+        auth: true,
+        body: {
+          orderId
+        }
+      }
+    );
   }
 };

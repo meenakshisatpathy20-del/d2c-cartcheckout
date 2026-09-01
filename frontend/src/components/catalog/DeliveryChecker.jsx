@@ -1,31 +1,48 @@
 import { useState } from "react";
-import { MapPin, CheckCircle2, Truck, Loader2 } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  MapPin,
+  Truck
+} from "lucide-react";
+import api from "../../services/api";
 
-function DeliveryChecker({ api, product, compact = false }) {
-  const [pincode, setPincode] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+function DeliveryChecker({
+  product,
+  compact = false
+}) {
+  const [pincode, setPincode] =
+    useState("");
+  const [result, setResult] =
+    useState(null);
+  const [loading, setLoading] =
+    useState(false);
 
   const checkDelivery = async () => {
     if (!/^\d{6}$/.test(pincode)) {
       setResult({
         success: false,
-        message: "Enter a valid 6-digit pincode"
+        message:
+          "Enter a valid 6-digit pincode"
       });
       return;
     }
 
     try {
       setLoading(true);
+      setResult(null);
 
-      const response = await api.checkDelivery(
-        pincode,
-        product?.sku || product?.id
-      );
+      const response =
+        await api.checkDelivery(
+          pincode,
+          product?.sku ||
+            product?.id
+        );
 
       setResult({
-        success: true,
-        ...(response || {}),
+        success:
+          response?.available !== false,
+        ...response,
         message:
           response?.message ||
           "Delivery is available at this location"
@@ -35,7 +52,7 @@ function DeliveryChecker({ api, product, compact = false }) {
         success: false,
         message:
           error?.message ||
-          "Delivery is currently unavailable for this pincode"
+          "Unable to check delivery"
       });
     } finally {
       setLoading(false);
@@ -45,15 +62,19 @@ function DeliveryChecker({ api, product, compact = false }) {
   return (
     <div
       className={`rounded-2xl border border-slate-200 bg-white ${
-        compact ? "p-3" : "p-5"
+        compact
+          ? "p-3"
+          : "p-5"
       }`}
     >
       <div className="flex items-center gap-2">
         <MapPin className="h-5 w-5 text-orange-500" />
+
         <div>
           <h3 className="font-bold text-slate-900">
             Check Delivery
           </h3>
+
           {!compact && (
             <p className="text-sm text-slate-500">
               Enter your pincode to check delivery availability
@@ -63,29 +84,35 @@ function DeliveryChecker({ api, product, compact = false }) {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <div className="relative flex-1">
-          <input
-            value={pincode}
-            onChange={(e) =>
-              setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))
+        <input
+          value={pincode}
+          onChange={(event) =>
+            setPincode(
+              event.target.value
+                .replace(/\D/g, "")
+                .slice(0, 6)
+            )
+          }
+          onKeyDown={(event) => {
+            if (
+              event.key === "Enter"
+            ) {
+              checkDelivery();
             }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                checkDelivery();
-              }
-            }}
-            placeholder="Enter pincode"
-            inputMode="numeric"
-            maxLength={6}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-          />
-        </div>
+          }}
+          placeholder="Enter pincode"
+          inputMode="numeric"
+          maxLength={6}
+          className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+        />
 
         <button
           type="button"
-          onClick={checkDelivery}
+          onClick={
+            checkDelivery
+          }
           disabled={loading}
-          className="flex min-w-[100px] items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-w-[95px] items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white hover:bg-orange-500 disabled:opacity-60"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -104,8 +131,8 @@ function DeliveryChecker({ api, product, compact = false }) {
           }`}
         >
           {result.success ? (
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
+            <div>
+              <div className="flex gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
 
                 <div>
@@ -116,7 +143,9 @@ function DeliveryChecker({ api, product, compact = false }) {
                   {result.eta && (
                     <p className="mt-1 text-sm">
                       Estimated delivery:{" "}
-                      <strong>{result.eta}</strong>
+                      <strong>
+                        {result.eta}
+                      </strong>
                     </p>
                   )}
                 </div>
@@ -124,33 +153,40 @@ function DeliveryChecker({ api, product, compact = false }) {
 
               {(result.courier ||
                 result.carrier ||
-                result.shippingFee !== undefined) && (
-                <div className="grid gap-2 border-t border-green-200 pt-3 text-sm sm:grid-cols-3">
-                  {(result.courier || result.carrier) && (
+                result.shippingFee !==
+                  undefined) && (
+                <div className="mt-3 grid gap-2 border-t border-green-200 pt-3 text-sm sm:grid-cols-3">
+                  {(result.courier ||
+                    result.carrier) && (
                     <div className="flex items-center gap-2">
                       <Truck className="h-4 w-4" />
-                      <span>
-                        {result.courier || result.carrier}
-                      </span>
+                      {result.courier ||
+                        result.carrier}
                     </div>
                   )}
 
-                  {result.shippingFee !== undefined && (
+                  {result.shippingFee !==
+                    undefined && (
                     <div>
                       Shipping:{" "}
                       <strong>
-                        {Number(result.shippingFee) === 0
+                        {Number(
+                          result.shippingFee
+                        ) === 0
                           ? "FREE"
                           : `₹${result.shippingFee}`}
                       </strong>
                     </div>
                   )}
 
-                  {result.cod !== undefined && (
+                  {result.cod !==
+                    undefined && (
                     <div>
                       COD:{" "}
                       <strong>
-                        {result.cod ? "Available" : "Unavailable"}
+                        {result.cod
+                          ? "Available"
+                          : "Unavailable"}
                       </strong>
                     </div>
                   )}

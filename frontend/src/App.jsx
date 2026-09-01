@@ -1,797 +1,1213 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Search,
-  ShoppingBag,
-  Package,
-  Truck,
-  Home,
-  Menu,
-  X,
-  ShieldCheck,
-  LogOut,
-  Store,
-  ChevronDown
-} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
-import { api } from './services/api';
-import { useCart } from './context/CartContext';
+import Header from "./components/common/Header";
+import Footer from "./components/common/Footer";
 
-import ProductCard from './components/catalog/ProductCard';
-import ProductDetailModal from './components/catalog/ProductDetailModal';
-import CartDrawer from './components/cart/CartDrawer';
-import CheckoutModal from './components/checkout/CheckoutModal';
-import OrderSuccessModal from './components/checkout/OrderSuccessModal';
-import CustomerOrdersView from './components/order/CustomerOrdersView';
-import TrackOrderView from './components/tracking/TrackOrderView';
-import PromotionalBanners from './components/common/PromotionalBanners';
-import Footer from './components/common/Footer';
-import FranchisePortalView from './components/franchise/FranchisePortalView';
-import AdminDashboard from './components/admin/AdminDashboard';
+import ProductCard from "./components/catalog/ProductCard";
+import ProductDetailModal from "./components/catalog/ProductDetailModal";
+import ProductGrid from "./components/catalog/ProductGrid";
 
-export default function App() {
-  const { cart, totalItemCount } = useCart();
+import CheckoutModal from "./components/checkout/CheckoutModal";
+import OrderSuccessModal from "./components/checkout/OrderSuccessModal";
+
+import CustomerOrdersView from "./components/order/CustomerOrdersView";
+import TrackOrderView from "./components/tracking/TrackOrderView";
+
+import FranchisePortalView from "./components/franchise/FranchisePortalView";
+
+import AdminLogin from "./components/admin/AdminLogin";
+import AdminOrdersView from "./components/admin/AdminOrdersView";
+
+import HomeExperience from "./components/home/HomeExperience";
+
+import "./index.css";
+
+/*
+|--------------------------------------------------------------------------
+| API
+|--------------------------------------------------------------------------
+|
+| Final api.js will be consolidated later.
+| For now App only expects these methods to exist:
+|
+| getProducts()
+| getAdminOrders()
+| adminLogin()
+|
+*/
+
+import api from "./api";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="*" element={<Application />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function Application() {
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
-  const [activeView, setActiveView] = useState('home');
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  const [cart, setCart] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("d2c_cart") || "[]"
+      );
+    } catch {
+      return [];
+    }
+  });
+
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("d2c_wishlist") || "[]"
+      );
+    } catch {
+      return [];
+    }
+  });
+
+  const [selectedProduct, setSelectedProduct] =
+    useState(null);
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [orderSuccessOpen, setOrderSuccessOpen] = useState(false);
-  const [completedOrder, setCompletedOrder] = useState(null);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [sortBy, setSortBy] = useState('featured');
+  const [orderSuccess, setOrderSuccess] =
+    useState(null);
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminSession, setAdminSession] =
+    useState(() => {
+      try {
+        const saved =
+          localStorage.getItem("d2c_admin_session") ||
+          sessionStorage.getItem("d2c_admin_session");
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminLoggedIn, setAdminLoggedIn] = useState(false);
-  const [adminUser, setAdminUser] = useState(null);
-
-  const [adminLoginOpen, setAdminLoginOpen] = useState(false);
-  const [adminUsername, setAdminUsername] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminLoginError, setAdminLoginError] = useState('');
-  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
-
-  const loadProducts = async () => {
-    try {
-      const data = await api.getProducts();
-      setProducts(data || []);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+        return saved ? JSON.parse(saved) : null;
+      } catch {
+        return null;
+      }
+    });
 
   useEffect(() => {
     loadProducts();
-
-    const savedAdmin = localStorage.getItem('d2c_admin_user');
-
-    if (savedAdmin) {
-      try {
-        const parsed = JSON.parse(savedAdmin);
-
-        if (parsed?.token) {
-          setAdminLoggedIn(true);
-          setAdminUser(parsed);
-        }
-      } catch {
-        localStorage.removeItem('d2c_admin_user');
-      }
-    }
   }, []);
 
-  const categories = [
-    {
-      id: 'ALL',
-      label: 'All Products'
-    },
-    {
-      id: 'beauty',
-      label: 'Beauty'
-    },
-    {
-      id: 'fragrances',
-      label: 'Fragrances'
-    }
-  ];
+  useEffect(() => {
+    localStorage.setItem(
+      "d2c_cart",
+      JSON.stringify(cart)
+    );
+  }, [cart]);
 
-  const filteredProducts = products
-    .filter((product) => {
-      const matchesSearch =
-        !searchQuery.trim() ||
-        product.name
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        product.brand
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    localStorage.setItem(
+      "d2c_wishlist",
+      JSON.stringify(wishlist)
+    );
+  }, [wishlist]);
 
-      const matchesCategory =
-        selectedCategory === 'ALL' ||
-        product.category === selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'price-low') {
-        return Number(a.price || 0) - Number(b.price || 0);
-      }
-
-      if (sortBy === 'price-high') {
-        return Number(b.price || 0) - Number(a.price || 0);
-      }
-
-      if (sortBy === 'rating') {
-        return Number(b.rating || 0) - Number(a.rating || 0);
-      }
-
-      if (sortBy === 'discount') {
-        const discountA =
-          a.mrp > a.price
-            ? ((a.mrp - a.price) / a.mrp) * 100
-            : 0;
-
-        const discountB =
-          b.mrp > b.price
-            ? ((b.mrp - b.price) / b.mrp) * 100
-            : 0;
-
-        return discountB - discountA;
-      }
-
-      return 0;
-    });
-
-  const handleNavigate = (view) => {
-    setActiveView(view);
-    setMobileMenuOpen(false);
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
-
-  const handleAdminLogin = async (event) => {
-    event.preventDefault();
-
-    if (!adminUsername.trim() || !adminPassword.trim()) {
-      setAdminLoginError('Enter username and password.');
-      return;
-    }
-
-    setAdminLoginLoading(true);
-    setAdminLoginError('');
+  async function loadProducts() {
+    setLoadingProducts(true);
 
     try {
-      const result = await api.adminLogin({
-        username: adminUsername.trim(),
-        password: adminPassword
-      });
+      const result = await api.getProducts();
 
-      if (!result?.success) {
-        throw new Error(
-          result?.message || 'Invalid admin credentials.'
+      setProducts(
+        Array.isArray(result)
+          ? result
+          : result?.products || []
+      );
+    } catch (error) {
+      console.error(
+        "Unable to load products:",
+        error
+      );
+    } finally {
+      setLoadingProducts(false);
+    }
+  }
+
+  function addToCart(product, quantity = 1) {
+    if (!product) return;
+
+    setCart((current) => {
+      const existing = current.find(
+        (item) =>
+          item.id === product.id ||
+          item.skuId === product.id
+      );
+
+      if (existing) {
+        return current.map((item) =>
+          item.id === product.id ||
+          item.skuId === product.id
+            ? {
+                ...item,
+                qty:
+                  Number(item.qty || 1) +
+                  quantity,
+              }
+            : item
         );
       }
 
-      const adminData = {
-        token: result.token,
-        username:
-          result.username ||
-          result.user?.username ||
-          adminUsername.trim(),
-        role:
-          result.role ||
-          result.user?.role ||
-          'WAREHOUSE_ADMIN'
-      };
+      return [
+        ...current,
+        {
+          ...product,
+          skuId: product.id,
+          qty: quantity,
+        },
+      ];
+    });
+  }
 
-      localStorage.setItem(
-        'd2c_admin_user',
-        JSON.stringify(adminData)
+  function removeFromCart(productId) {
+    setCart((current) =>
+      current.filter(
+        (item) =>
+          item.id !== productId &&
+          item.skuId !== productId
+      )
+    );
+  }
+
+  function updateCartQuantity(productId, quantity) {
+    const safeQuantity = Math.max(
+      1,
+      Number(quantity) || 1
+    );
+
+    setCart((current) =>
+      current.map((item) =>
+        item.id === productId ||
+        item.skuId === productId
+          ? {
+              ...item,
+              qty: safeQuantity,
+            }
+          : item
+      )
+    );
+  }
+
+  function clearCart() {
+    setCart([]);
+  }
+
+  function toggleWishlist(product) {
+    if (!product) return;
+
+    setWishlist((current) => {
+      const exists = current.some(
+        (item) =>
+          item.id === product.id
       );
 
-      setAdminUser(adminData);
-      setAdminLoggedIn(true);
-      setIsAdmin(true);
-      setAdminLoginOpen(false);
-      setAdminPassword('');
-      setActiveView('admin');
-    } catch (error) {
-      setAdminLoginError(
-        error.message || 'Unable to login.'
-      );
-    } finally {
-      setAdminLoginLoading(false);
-    }
-  };
-
-  const handleAdminLogout = async () => {
-    try {
-      if (api.adminLogout) {
-        await api.adminLogout();
+      if (exists) {
+        return current.filter(
+          (item) =>
+            item.id !== product.id
+        );
       }
-    } catch {
-    }
 
-    localStorage.removeItem('d2c_admin_user');
+      return [...current, product];
+    });
+  }
 
-    setAdminLoggedIn(false);
-    setAdminUser(null);
-    setIsAdmin(false);
-    setAdminLoginOpen(false);
-    setActiveView('home');
-  };
+  function isWishlisted(productId) {
+    return wishlist.some(
+      (item) => item.id === productId
+    );
+  }
 
-  const openAdmin = () => {
-    if (adminLoggedIn) {
-      setIsAdmin(true);
-      setActiveView('admin');
-      setMobileMenuOpen(false);
+  const cartCount = useMemo(() => {
+    return cart.reduce(
+      (total, item) =>
+        total + Number(item.qty || 1),
+      0
+    );
+  }, [cart]);
+
+  const cartSubtotal = useMemo(() => {
+    return cart.reduce(
+      (total, item) =>
+        total +
+        Number(item.price || 0) *
+          Number(item.qty || 1),
+      0
+    );
+  }, [cart]);
+
+  function openProduct(product) {
+    setSelectedProduct(product);
+  }
+
+  function handleHomeCategory(category) {
+    const value = String(
+      category || ""
+    ).toLowerCase();
+
+    if (
+      value === "home" ||
+      value === "stories"
+    ) {
+      navigate("/");
       return;
     }
 
-    setAdminLoginError('');
-    setAdminLoginOpen(true);
-    setMobileMenuOpen(false);
-  };
+    if (
+      value.includes("deal") ||
+      value.includes("sale")
+    ) {
+      navigate("/catalog?collection=sale");
+      return;
+    }
 
-  const handleOrderSuccess = (orderData) => {
-    setCompletedOrder(orderData);
+    if (
+      value.includes("brand")
+    ) {
+      navigate("/catalog?collection=brands");
+      return;
+    }
+
+    navigate(
+      `/catalog?search=${encodeURIComponent(
+        category
+      )}`
+    );
+  }
+
+  function handleCheckoutComplete(order) {
     setCheckoutOpen(false);
-    setOrderSuccessOpen(true);
-    setActiveView('home');
-    loadProducts();
-  };
+    clearCart();
 
-  const handleBuyNow = () => {
-    setCheckoutOpen(true);
-  };
+    setOrderSuccess(order);
 
-  const handleSelectProduct = (product) => {
-    setSelectedProduct(product);
-  };
+    navigate("/orders");
+  }
 
-  const handleRefreshProducts = async () => {
-    await loadProducts();
-  };
+  function handleAdminLogin(session) {
+    setAdminSession(session);
+    navigate("/admin/orders");
+  }
 
-  const renderHome = () => (
-    <>
-      <PromotionalBanners />
+  function logoutAdmin() {
+    localStorage.removeItem(
+      "d2c_admin_session"
+    );
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-6">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] font-black text-orange-500">
-              Direct from verified brands
-            </p>
+    sessionStorage.removeItem(
+      "d2c_admin_session"
+    );
 
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-950 mt-1">
-              Shop trusted D2C products
-            </h1>
+    setAdminSession(null);
 
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Authentic products, fast delivery and secure checkout.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() =>
-                  setSelectedCategory(category.id)
-                }
-                className={`px-3.5 py-2 rounded-xl text-xs font-black transition ${
-                  selectedCategory === category.id
-                    ? 'bg-slate-950 text-white shadow-md'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) =>
-                setSearchQuery(event.target.value)
-              }
-              placeholder="Search products or brands..."
-              className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-            />
-          </div>
-
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={(event) =>
-                setSortBy(event.target.value)
-              }
-              className="appearance-none w-full sm:w-48 bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500"
-            >
-              <option value="featured">
-                Sort: Featured
-              </option>
-              <option value="rating">
-                Highest Rated
-              </option>
-              <option value="discount">
-                Biggest Discount
-              </option>
-              <option value="price-low">
-                Price: Low to High
-              </option>
-              <option value="price-high">
-                Price: High to Low
-              </option>
-            </select>
-
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
-        </div>
-
-        {filteredProducts.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-3xl p-14 text-center">
-            <Package className="w-10 h-10 mx-auto text-slate-300" />
-
-            <h3 className="font-black text-slate-900 mt-3">
-              No products found
-            </h3>
-
-            <p className="text-xs text-slate-500 mt-1">
-              Try another product name, brand or category.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onSelectProduct={handleSelectProduct}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </>
-  );
-
-  const renderCustomerView = () => {
-    if (activeView === 'cart') {
-      return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-          <CartDrawer
-            onProceedCheckout={() =>
-              setCheckoutOpen(true)
-            }
-          />
-        </div>
-      );
-    }
-
-    if (activeView === 'orders') {
-      return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-          <CustomerOrdersView />
-        </div>
-      );
-    }
-
-    if (activeView === 'tracking') {
-      return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-          <TrackOrderView />
-        </div>
-      );
-    }
-
-    if (activeView === 'franchise') {
-      return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-          <FranchisePortalView />
-        </div>
-      );
-    }
-
-    return renderHome();
-  };
+    navigate("/admin/login");
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="h-16 flex items-center justify-between gap-4">
-            <button
-              onClick={() => {
-                setIsAdmin(false);
-                handleNavigate('home');
-              }}
-              className="flex items-center gap-2.5 shrink-0"
-            >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-700 to-slate-950 text-white flex items-center justify-center shadow-md">
-                <Store className="w-5 h-5" />
-              </div>
+    <div className="min-h-screen bg-white">
+      {/* =====================================================
+          CUSTOMER HEADER
+      ====================================================== */}
 
-              <div className="text-left">
-                <div className="font-black text-slate-950 leading-none">
-                  D2C MALL
-                </div>
+      <Header
+        cartCount={cartCount}
+        cart={cart}
+        wishlist={wishlist}
+        onCartClick={() =>
+          navigate("/checkout")
+        }
+        onWishlistClick={() =>
+          navigate("/wishlist")
+        }
+        onOrdersClick={() =>
+          navigate("/orders")
+        }
+        onHomeClick={() =>
+          navigate("/")
+        }
+      />
 
-                <div className="text-[8px] uppercase tracking-[0.18em] text-orange-500 font-black mt-0.5">
-                  Direct Brand Marketplace
-                </div>
-              </div>
-            </button>
+      <Routes>
 
-            <div className="hidden md:flex items-center gap-1">
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('home');
-                }}
-                className={`px-3 py-2 rounded-xl text-xs font-black transition ${
-                  !isAdmin && activeView === 'home'
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                Home
-              </button>
+        {/* ===================================================
+            HOME
+        ==================================================== */}
 
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('orders');
-                }}
-                className={`px-3 py-2 rounded-xl text-xs font-black transition ${
-                  !isAdmin && activeView === 'orders'
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                My Orders
-              </button>
+        <Route
+          path="/"
+          element={
+            <HomeExperience
+              products={products}
+              onProductClick={openProduct}
+              onAddToCart={(product) =>
+                addToCart(product)
+              }
+              onWishlist={toggleWishlist}
+              onCategoryClick={
+                handleHomeCategory
+              }
+            />
+          }
+        />
 
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('tracking');
-                }}
-                className={`px-3 py-2 rounded-xl text-xs font-black transition ${
-                  !isAdmin && activeView === 'tracking'
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                Track Order
-              </button>
+        {/* ===================================================
+            CATALOG
+        ==================================================== */}
 
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('franchise');
-                }}
-                className={`px-3 py-2 rounded-xl text-xs font-black transition ${
-                  !isAdmin && activeView === 'franchise'
-                    ? 'bg-orange-50 text-orange-700'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                Franchise
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={openAdmin}
-                className="hidden sm:inline-flex items-center gap-1.5 bg-slate-950 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-black transition"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-
-                {adminLoggedIn
-                  ? 'Warehouse Admin'
-                  : 'Warehouse Login'}
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('cart');
-                }}
-                className="relative inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl text-xs font-black transition shadow-sm"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  Basket
-                </span>
-
-                {totalItemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 bg-slate-950 text-white rounded-full text-[9px] flex items-center justify-center border-2 border-white">
-                    {totalItemCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() =>
-                  setMobileMenuOpen((value) => !value)
-                }
-                className="md:hidden w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-700"
-              >
-                {mobileMenuOpen ? (
-                  <X className="w-4 h-4" />
-                ) : (
-                  <Menu className="w-4 h-4" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {mobileMenuOpen && (
-            <div className="md:hidden py-3 border-t border-slate-100 space-y-1">
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('home');
-                }}
-                className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-black hover:bg-slate-100 flex items-center gap-2"
-              >
-                <Home className="w-4 h-4" />
-                Home
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('orders');
-                }}
-                className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-black hover:bg-slate-100 flex items-center gap-2"
-              >
-                <Package className="w-4 h-4" />
-                My Orders
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('tracking');
-                }}
-                className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-black hover:bg-slate-100 flex items-center gap-2"
-              >
-                <Truck className="w-4 h-4" />
-                Track Order
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsAdmin(false);
-                  handleNavigate('franchise');
-                }}
-                className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-black hover:bg-slate-100 flex items-center gap-2"
-              >
-                <Store className="w-4 h-4" />
-                Franchise
-              </button>
-
-              <button
-                onClick={openAdmin}
-                className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-black bg-slate-950 text-white flex items-center gap-2"
-              >
-                <ShieldCheck className="w-4 h-4" />
-
-                {adminLoggedIn
-                  ? 'Warehouse Admin Dashboard'
-                  : 'Warehouse Admin Login'}
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {isAdmin && adminLoggedIn ? (
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-            <div className="bg-slate-950 rounded-3xl p-4 sm:p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
-              <div>
-                <p className="text-[9px] uppercase tracking-[0.2em] text-orange-400 font-black">
-                  D2C MALL OPERATIONS
+        <Route
+          path="/catalog"
+          element={
+            <main className="max-w-[1450px] mx-auto px-4 py-6">
+              <div className="mb-6">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">
+                  D2C Mall
                 </p>
 
-                <h1 className="text-lg font-black mt-0.5">
-                  Warehouse & Order Control Center
+                <h1 className="text-3xl font-black text-slate-950">
+                  Explore Products
                 </h1>
 
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Signed in as{' '}
-                  <span className="text-white font-bold">
-                    {adminUser?.username || 'Administrator'}
-                  </span>
-                  {' • '}
-                  {adminUser?.role || 'WAREHOUSE_ADMIN'}
+                <p className="text-sm text-slate-500 mt-1">
+                  Discover fashion, beauty,
+                  lifestyle and more.
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setIsAdmin(false);
-                    setActiveView('home');
-                  }}
-                  className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold transition"
-                >
-                  Customer Store
-                </button>
-
-                <button
-                  onClick={handleAdminLogout}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-xs font-black transition"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-            <AdminDashboard
-              products={products}
-              onRefresh={handleRefreshProducts}
-            />
-          </div>
-        </main>
-      ) : (
-        <main className="flex-1">
-          {renderCustomerView()}
-        </main>
-      )}
-
-      {!isAdmin && <Footer />}
-
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={Boolean(selectedProduct)}
-        onClose={() => setSelectedProduct(null)}
-        onBuyNow={handleBuyNow}
-      />
-
-      <CheckoutModal
-        isOpen={checkoutOpen}
-        onClose={() => setCheckoutOpen(false)}
-        onSuccess={handleOrderSuccess}
-      />
-
-      <OrderSuccessModal
-        isOpen={orderSuccessOpen}
-        order={completedOrder}
-        onClose={() => setOrderSuccessOpen(false)}
-        onViewOrders={() => {
-          setOrderSuccessOpen(false);
-          setActiveView('orders');
-          setIsAdmin(false);
-        }}
-      />
-
-      {adminLoginOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden">
-            <div className="bg-slate-950 p-6 text-white relative">
-              <button
-                onClick={() => setAdminLoginOpen(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center mb-4">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-
-              <p className="text-[9px] uppercase tracking-[0.2em] text-orange-400 font-black">
-                Restricted Access
-              </p>
-
-              <h2 className="text-xl font-black mt-1">
-                Warehouse Admin Login
-              </h2>
-
-              <p className="text-xs text-slate-400 mt-1">
-                Access orders, customers, inventory,
-                shipments and carrier operations.
-              </p>
-            </div>
-
-            <form
-              onSubmit={handleAdminLogin}
-              className="p-6 space-y-4"
-            >
-              {adminLoginError && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-3 text-xs font-bold">
-                  {adminLoginError}
+              {loadingProducts ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Array.from({
+                    length: 8,
+                  }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="h-80 rounded-2xl bg-slate-100 animate-pulse"
+                    />
+                  ))}
                 </div>
+              ) : (
+                <ProductGrid
+                  products={products}
+                  onProductClick={openProduct}
+                  onAddToCart={addToCart}
+                  onWishlist={
+                    toggleWishlist
+                  }
+                  wishlist={wishlist}
+                />
               )}
+            </main>
+          }
+        />
 
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">
-                  Admin Username
-                </label>
+        {/* ===================================================
+            CHECKOUT
+        ==================================================== */}
 
-                <input
-                  type="text"
-                  value={adminUsername}
-                  onChange={(event) =>
-                    setAdminUsername(event.target.value)
+        <Route
+          path="/checkout"
+          element={
+            <div className="max-w-[1450px] mx-auto px-4 py-8">
+              {cart.length === 0 ? (
+                <EmptyCart
+                  onContinue={() =>
+                    navigate("/")
                   }
-                  placeholder="Enter admin username"
-                  autoComplete="username"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">
-                  Password
-                </label>
-
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(event) =>
-                    setAdminPassword(event.target.value)
+              ) : (
+                <CheckoutPage
+                  cart={cart}
+                  subtotal={cartSubtotal}
+                  onQuantityChange={
+                    updateCartQuantity
                   }
-                  placeholder="Enter admin password"
-                  autoComplete="current-password"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10"
+                  onRemove={removeFromCart}
+                  onCheckout={() =>
+                    setCheckoutOpen(true)
+                  }
                 />
-              </div>
+              )}
+            </div>
+          }
+        />
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[10px] text-amber-800">
-                <div className="font-black mb-0.5">
-                  Warehouse access
-                </div>
+        {/* ===================================================
+            ORDERS
+        ==================================================== */}
 
-                <div>
-                  This area is intended for authorized
-                  warehouse and operations staff.
-                </div>
-              </div>
+        <Route
+          path="/orders"
+          element={
+            <main className="max-w-[1450px] mx-auto px-4 py-6">
+              <CustomerOrdersView
+                api={api}
+                onTrackShipment={(shipment) =>
+                  navigate(
+                    `/tracking/${encodeURIComponent(
+                      shipment?.awb ||
+                        shipment?.shipmentId ||
+                        ""
+                    )}`
+                  )
+                }
+              />
+            </main>
+          }
+        />
 
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setAdminLoginOpen(false)}
-                  className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black transition"
-                >
-                  Cancel
-                </button>
+        {/* ===================================================
+            TRACKING
+        ==================================================== */}
 
-                <button
-                  type="submit"
-                  disabled={adminLoginLoading}
-                  className="flex-1 py-3 rounded-xl bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white text-xs font-black transition"
-                >
-                  {adminLoginLoading
-                    ? 'Signing in...'
-                    : 'Sign In'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Route
+          path="/tracking/:awb"
+          element={
+            <main className="max-w-[1450px] mx-auto px-4 py-6">
+              <TrackOrderView api={api} />
+            </main>
+          }
+        />
+
+        {/* ===================================================
+            FRANCHISE
+        ==================================================== */}
+
+        <Route
+          path="/franchise"
+          element={
+            <FranchisePortalView
+              api={api}
+            />
+          }
+        />
+
+        {/* ===================================================
+            WISHLIST
+        ==================================================== */}
+
+        <Route
+          path="/wishlist"
+          element={
+            <WishlistPage
+              wishlist={wishlist}
+              onProductClick={openProduct}
+              onAddToCart={addToCart}
+              onRemove={toggleWishlist}
+            />
+          }
+        />
+
+        {/* ===================================================
+            ADMIN LOGIN
+        ==================================================== */}
+
+        <Route
+          path="/admin/login"
+          element={
+            adminSession ? (
+              <Navigate
+                to="/admin/orders"
+                replace
+              />
+            ) : (
+              <AdminLogin
+                api={api}
+                onLogin={handleAdminLogin}
+              />
+            )
+          }
+        />
+
+        {/* ===================================================
+            ADMIN ORDERS
+        ==================================================== */}
+
+        <Route
+          path="/admin/orders"
+          element={
+            <AdminProtected
+              session={adminSession}
+            >
+              <AdminLayout
+                session={adminSession}
+                onLogout={logoutAdmin}
+                current="orders"
+              >
+                <AdminOrdersView
+                  api={api}
+                  onTrackShipment={(shipment) =>
+                    navigate(
+                      `/admin/shipments/${encodeURIComponent(
+                        shipment?.shipmentId ||
+                          shipment?.awb ||
+                          ""
+                      )}`
+                    )
+                  }
+                />
+              </AdminLayout>
+            </AdminProtected>
+          }
+        />
+
+        {/* ===================================================
+            ADMIN SHIPMENTS
+        ==================================================== */}
+
+        <Route
+          path="/admin/shipments"
+          element={
+            <AdminProtected
+              session={adminSession}
+            >
+              <AdminLayout
+                session={adminSession}
+                onLogout={logoutAdmin}
+                current="shipments"
+              >
+                <AdminComingSoon
+                  title="Shipment Management"
+                  description="Shipment tracking, carrier routing, AWB management and delivery operations are being connected to the final Shiprocket backend."
+                />
+              </AdminLayout>
+            </AdminProtected>
+          }
+        />
+
+        {/* ===================================================
+            ADMIN CUSTOMERS
+        ==================================================== */}
+
+        <Route
+          path="/admin/customers"
+          element={
+            <AdminProtected
+              session={adminSession}
+            >
+              <AdminLayout
+                session={adminSession}
+                onLogout={logoutAdmin}
+                current="customers"
+              >
+                <AdminComingSoon
+                  title="Customer Management"
+                  description="Customer profiles, order history, addresses, payment activity and lifetime value will appear here."
+                />
+              </AdminLayout>
+            </AdminProtected>
+          }
+        />
+
+        {/* ===================================================
+            ADMIN WAREHOUSE
+        ==================================================== */}
+
+        <Route
+          path="/admin/warehouse"
+          element={
+            <AdminProtected
+              session={adminSession}
+            >
+              <AdminLayout
+                session={adminSession}
+                onLogout={logoutAdmin}
+                current="warehouse"
+              >
+                <AdminComingSoon
+                  title="Warehouse Operations"
+                  description="Inventory, warehouse allocation, low-stock alerts and fulfillment routing."
+                />
+              </AdminLayout>
+            </AdminProtected>
+          }
+        />
+
+        {/* ===================================================
+            ADMIN ANALYTICS
+        ==================================================== */}
+
+        <Route
+          path="/admin/analytics"
+          element={
+            <AdminProtected
+              session={adminSession}
+            >
+              <AdminLayout
+                session={adminSession}
+                onLogout={logoutAdmin}
+                current="analytics"
+              >
+                <AdminComingSoon
+                  title="Operations Analytics"
+                  description="Revenue, orders, fulfillment SLA, delivery performance and customer metrics."
+                />
+              </AdminLayout>
+            </AdminProtected>
+          }
+        />
+      </Routes>
+
+      {/* =====================================================
+          PRODUCT MODAL
+      ====================================================== */}
+
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() =>
+            setSelectedProduct(null)
+          }
+          onAddToCart={(product) => {
+            addToCart(product);
+            setSelectedProduct(null);
+          }}
+          onWishlist={toggleWishlist}
+          isWishlisted={isWishlisted(
+            selectedProduct.id
+          )}
+        />
       )}
+
+      {/* =====================================================
+          CHECKOUT MODAL
+      ====================================================== */}
+
+      {checkoutOpen && (
+        <CheckoutModal
+          cart={cart}
+          products={products}
+          subtotal={cartSubtotal}
+          onClose={() =>
+            setCheckoutOpen(false)
+          }
+          onSuccess={
+            handleCheckoutComplete
+          }
+          api={api}
+        />
+      )}
+
+      {/* =====================================================
+          ORDER SUCCESS
+      ====================================================== */}
+
+      {orderSuccess && (
+        <OrderSuccessModal
+          order={orderSuccess}
+          onClose={() =>
+            setOrderSuccess(null)
+          }
+          onTrack={() => {
+            setOrderSuccess(null);
+
+            const shipment =
+              orderSuccess?.fulfillments?.[0];
+
+            navigate(
+              `/tracking/${encodeURIComponent(
+                shipment?.awb ||
+                  shipment?.shipmentId ||
+                  orderSuccess?.orderId ||
+                  ""
+              )}`
+            );
+          }}
+          onOrders={() => {
+            setOrderSuccess(null);
+            navigate("/orders");
+          }}
+        />
+      )}
+
+      <Footer />
     </div>
   );
 }
+
+/* ============================================================
+   ADMIN PROTECTION
+============================================================ */
+
+function AdminProtected({
+  session,
+  children,
+}) {
+  if (!session?.authenticated) {
+    return (
+      <Navigate
+        to="/admin/login"
+        replace
+      />
+    );
+  }
+
+  return children;
+}
+
+/* ============================================================
+   ADMIN LAYOUT
+============================================================ */
+
+function AdminLayout({
+  session,
+  onLogout,
+  current,
+  children,
+}) {
+  const navigate = useNavigate();
+
+  const navigation = [
+    {
+      id: "orders",
+      label: "Orders",
+      path: "/admin/orders",
+    },
+    {
+      id: "shipments",
+      label: "Shipments",
+      path: "/admin/shipments",
+    },
+    {
+      id: "customers",
+      label: "Customers",
+      path: "/admin/customers",
+    },
+    {
+      id: "warehouse",
+      label: "Warehouse",
+      path: "/admin/warehouse",
+    },
+    {
+      id: "analytics",
+      label: "Analytics",
+      path: "/admin/analytics",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="flex min-h-screen">
+
+        {/* SIDEBAR */}
+
+        <aside className="hidden lg:flex w-64 bg-slate-950 text-white flex-col shrink-0">
+          <div className="p-5 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-black">
+                D2C
+              </div>
+
+              <div>
+                <p className="font-black">
+                  D2C MALL
+                </p>
+
+                <p className="text-[8px] uppercase tracking-[0.18em] text-orange-400">
+                  Operations
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-3 py-5">
+            <p className="text-[8px] uppercase tracking-[0.18em] font-black text-slate-500 px-3 mb-3">
+              Operations
+            </p>
+
+            <div className="space-y-1">
+              {navigation.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    navigate(item.path)
+                  }
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-black transition ${
+                    current === item.id
+                      ? "bg-orange-500 text-white"
+                      : "text-slate-300 hover:bg-white/10"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-auto p-4 border-t border-white/10">
+            <div className="mb-3 rounded-xl bg-white/5 p-3">
+              <p className="text-[9px] font-black">
+                {session?.user?.name ||
+                  "D2C Admin"}
+              </p>
+
+              <p className="text-[8px] text-slate-400 mt-1">
+                {session?.user?.email || ""}
+              </p>
+
+              <span className="inline-block mt-2 px-2 py-1 rounded-md bg-green-500/15 text-green-400 text-[7px] font-black">
+                {session?.user?.role ||
+                  "ADMIN"}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onLogout}
+              className="w-full rounded-xl border border-white/10 px-3 py-2 text-xs font-black text-slate-300 hover:bg-white/10"
+            >
+              Sign Out
+            </button>
+          </div>
+        </aside>
+
+        {/* CONTENT */}
+
+        <main className="flex-1 min-w-0">
+          <div className="lg:hidden bg-slate-950 text-white p-4 flex items-center justify-between">
+            <div>
+              <p className="font-black">
+                D2C MALL
+              </p>
+
+              <p className="text-[8px] text-orange-400 font-black">
+                OPERATIONS
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onLogout}
+              className="text-xs font-black"
+            >
+              Logout
+            </button>
+          </div>
+
+          <div className="p-4 sm:p-6 lg:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   CHECKOUT PAGE
+============================================================ */
+
+function CheckoutPage({
+  cart,
+  subtotal,
+  onQuantityChange,
+  onRemove,
+  onCheckout,
+}) {
+  return (
+    <div className="max-w-5xl mx-auto">
+      <div className="mb-6">
+        <p className="text-xs uppercase tracking-[0.18em] font-black text-orange-600">
+          Your Bag
+        </p>
+
+        <h1 className="text-3xl font-black">
+          Checkout
+        </h1>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          {cart.map((item) => (
+            <div
+              key={item.id || item.skuId}
+              className="flex gap-4 p-4 border-b border-slate-100 last:border-0"
+            >
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-24 h-24 rounded-xl bg-slate-50 object-contain"
+              />
+
+              <div className="flex-1">
+                <p className="text-sm font-black">
+                  {item.name}
+                </p>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  {item.brand}
+                </p>
+
+                <p className="text-lg font-black mt-3">
+                  ₹
+                  {Number(
+                    item.price || 0
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
+                </p>
+
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onQuantityChange(
+                        item.id ||
+                          item.skuId,
+                        Number(
+                          item.qty || 1
+                        ) - 1
+                      )
+                    }
+                    className="w-7 h-7 rounded-lg border font-black"
+                  >
+                    −
+                  </button>
+
+                  <span className="text-xs font-black">
+                    {item.qty || 1}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onQuantityChange(
+                        item.id ||
+                          item.skuId,
+                        Number(
+                          item.qty || 1
+                        ) + 1
+                      )
+                    }
+                    className="w-7 h-7 rounded-lg border font-black"
+                  >
+                    +
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onRemove(
+                        item.id ||
+                          item.skuId
+                      )
+                    }
+                    className="ml-3 text-xs font-black text-red-500"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 h-fit">
+          <h2 className="font-black text-lg">
+            Order Summary
+          </h2>
+
+          <div className="flex justify-between mt-5 text-sm">
+            <span className="text-slate-500">
+              Subtotal
+            </span>
+
+            <strong>
+              ₹
+              {subtotal.toLocaleString(
+                "en-IN"
+              )}
+            </strong>
+          </div>
+
+          <div className="flex justify-between mt-3 text-sm">
+            <span className="text-slate-500">
+              Shipping
+            </span>
+
+            <strong className="text-green-600">
+              ₹50
+            </strong>
+          </div>
+
+          <div className="border-t mt-5 pt-5 flex justify-between">
+            <span className="font-black">
+              Total
+            </span>
+
+            <strong className="text-xl">
+              ₹
+              {(
+                subtotal + 50
+              ).toLocaleString(
+                "en-IN"
+              )}
+            </strong>
+          </div>
+
+          <button
+            type="button"
+            onClick={onCheckout}
+            className="w-full mt-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-sm"
+          >
+            PROCEED TO CHECKOUT
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   EMPTY CART
+============================================================ */
+
+function EmptyCart({
+  onContinue,
+}) {
+  return (
+    <div className="min-h-[500px] flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-20 h-20 mx-auto rounded-full bg-orange-50 flex items-center justify-center text-3xl">
+          🛍️
+        </div>
+
+        <h2 className="text-2xl font-black mt-5">
+          Your bag is empty
+        </h2>
+
+        <p className="text-sm text-slate-500 mt-2">
+          Add something you love.
+        </p>
+
+        <button
+          type="button"
+          onClick={onContinue}
+          className="mt-5 px-6 py-3 rounded-xl bg-blue-950 text-white text-sm font-black"
+        >
+          START SHOPPING
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   WISHLIST
+============================================================ */
+
+function WishlistPage({
+  wishlist,
+  onProductClick,
+  onAddToCart,
+  onRemove,
+}) {
+  return (
+    <main className="max-w-[1450px] mx-auto px-4 py-8">
+      <div className="mb-6">
+        <p className="text-xs uppercase tracking-[0.18em] font-black text-orange-600">
+          Saved For Later
+        </p>
+
+        <h1 className="text-3xl font-black">
+          Wishlist
+        </h1>
+      </div>
+
+      {!wishlist.length ? (
+        <div className="py-20 text-center">
+          <p className="text-4xl">
+            ♡
+          </p>
+
+          <h2 className="text-xl font-black mt-3">
+            Nothing saved yet
+          </h2>
+
+          <p className="text-sm text-slate-500 mt-1">
+            Tap the heart on products you love.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {wishlist.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onClick={() =>
+                onProductClick(product)
+              }
+              onAddToCart={() =>
+                onAddToCart(product)
+              }
+              onWishlist={() =>
+                onRemove(product)
+              }
+              isWishlisted
+            />
+          ))}
+        </div>
+      )}
+    </main>
+  );
+}
+
+/* ============================================================
+   ADMIN COMING SOON
+============================================================ */
+
+function AdminComingSoon({
+  title,
+  description,
+}) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-8">
+      <p className="text-[9px] uppercase tracking-[0.18em] font-black text-orange-600">
+        Operations Module
+      </p>
+
+      <h1 className="text-2xl font-black text-slate-950 mt-2">
+        {title}
+      </h1>
+
+      <p className="text-sm text-slate-500 max-w-2xl mt-2">
+        {description}
+      </p>
+
+      <div className="grid sm:grid-cols-3 gap-3 mt-7">
+        <div className="rounded-xl bg-orange-50 p-4">
+          <p className="text-xl">📦</p>
+          <p className="text-xs font-black mt-2">
+            Fulfillment
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-blue-50 p-4">
+          <p className="text-xl">🚚</p>
+          <p className="text-xs font-black mt-2">
+            Logistics
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-green-50 p-4">
+          <p className="text-xl">📊</p>
+          <p className="text-xs font-black mt-2">
+            Insights
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
